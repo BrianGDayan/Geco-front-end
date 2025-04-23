@@ -10,7 +10,7 @@ export default function Login() {
   };
   return (
     <div>
-      <p>Login page content goes here.</p>
+      <h1>Iniciar sesión</h1>
       <button onClick={handleClick}>Ingresar</button>
     </div>
   );
