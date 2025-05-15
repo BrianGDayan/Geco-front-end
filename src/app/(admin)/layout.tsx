@@ -1,4 +1,4 @@
-import Navbar from "./navbar";
+import Navbar from "./Navbar";
 
 export default function AuthLayout({ 
     children, 
@@ -6,12 +6,11 @@ export default function AuthLayout({
     children: React.ReactNode; 
 }) {
     return (
-        <div>
+        <div className="min-h-screen bg-gray-100">
             <Navbar />
-            <main className="flex flex-col items-center justify-center min-h-screen bg-gray-100 p-4">
+            <main className="flex flex-col items-center justify-center p-4">
                 {children}
             </main>
         </div>
-        
     );
 }

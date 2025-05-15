@@ -12,11 +12,12 @@ module.exports = {
       colors: {
         primary: '#1B5FA3',
         'primary-dark': '#154B82',
+        'primary-mid': '#18548F',
         'primary-light': '#3A75C1',
         accent: '#D97B1B',
         'accent-light': '#F0A760',
         'gray-bg': '#F5F7FA',
-        'gray-border': '#E1E4E8',
+        'gray-border': '#C5CBD2',
         'gray-text': '#333333',
       }
     },
