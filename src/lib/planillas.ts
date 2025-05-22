@@ -115,7 +115,7 @@ export interface RendimientosPromedio {
 }
 
 export async function getPlanillaByNro(nroPlanilla: string, idTarea: number): Promise<PlanillaResponse> {
-  const res = await fetcher<PlanillaResponse>(`/planillas/${nroPlanilla}?tareaId=${idTarea}`);
+  const res = await fetcher<PlanillaResponse>(`/planillas/${nroPlanilla}?idTarea=${idTarea}`);
   return res;
 }
 

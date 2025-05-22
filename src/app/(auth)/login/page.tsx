@@ -20,10 +20,10 @@ export default function Login() {
       const res = await login(dto);
       console.log("Login exitoso", res);
       if (res.rol === "admin") {
-        router.push("/home");
+        router.push("/admin");
       }
       else if (res.rol === "encargado") {
-        router.push("/registro-en-deposito");
+        router.push("/encargado");
       }
     }
     catch (error) {

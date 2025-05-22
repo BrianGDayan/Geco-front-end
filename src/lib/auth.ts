@@ -17,6 +17,5 @@ export async function login(loginDto: LoginDto): Promise<LoginResponse> {
     method: "POST",
     body: JSON.stringify(loginDto),
   });
-  localStorage.setItem("token", res.token);
   return res;
 }
