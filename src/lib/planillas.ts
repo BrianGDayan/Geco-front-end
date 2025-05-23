@@ -129,6 +129,10 @@ export async function getPlanillasEnCurso(): Promise<PlanillaSummary[]> {
   return res;
 }
 
+export async function getObras(): Promise<string[]> {
+  return await fetcher<string[]>("/planillas/obras");
+}
+
 export async function getRendimientosPorObra(obra: string): Promise<RendimientosPromedio> {
   const res = await fetcher<RendimientosPromedio>(`/planillas/rendimientos?obra=${obra}`);
   return res;

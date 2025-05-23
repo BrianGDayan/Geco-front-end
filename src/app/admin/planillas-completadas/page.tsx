@@ -23,7 +23,7 @@ export default function RendimientosScreen() {
         CORTE Y DOBLADO DE ARMADURA
       </h1>
 
-      <div className="flex justify-center gap-16">
+      <div className="flex justify-center gap-32">
         {/* RENDIMIENTO POR OBRA */}
         <div className="flex flex-col gap-4">
           <Listbox value={obraSeleccionada} onChange={setObraSeleccionada}>

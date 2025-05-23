@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { Listbox } from "@headlessui/react";
 import clsx from "clsx";
+import { getObras } from "@/lib/planillas"; 
+import { getRendimientosPorObra } from "@/lib/planillas";
 
 interface Rendimientos {
   rendimiento_global_corte_trabajador: number | null;
@@ -19,17 +21,17 @@ export default function SelectorDeObras() {
   const [rendimientos, setRendimientos] = useState<Rendimientos | null>(null);
 
   useEffect(() => {
-    fetch("/api/obras")
-      .then((res) => res.json())
-      .then((data) => setObras(data));
+    getObras()
+      .then((data) => setObras(data))
+      .catch((err) => console.error("Error al cargar obras:", err));
   }, []);
 
   useEffect(() => {
     if (obraSeleccionada) {
       const obraParam = obraSeleccionada === "Todas" ? "todas" : obraSeleccionada;
-      fetch(`/api/rendimientos?obra=${encodeURIComponent(obraParam)}`)
-        .then((res) => res.json())
-        .then((data) => setRendimientos(data));
+      getRendimientosPorObra(obraParam)
+        .then((data) => setRendimientos(data))
+        .catch((err) => console.error("Error al cargar rendimientos:", err));
     } else {
       setRendimientos(null);
     }
@@ -47,12 +49,7 @@ export default function SelectorDeObras() {
             <Listbox.Options className="absolute z-10 mt-1 border rounded shadow w-full bg-white">
               <Listbox.Option value="Todas">
                 {({ active }) => (
-                  <div
-                    className={clsx(
-                      "px-4 py-2 cursor-pointer",
-                      active && "bg-gray-200"
-                    )}
-                  >
+                  <div className={clsx("px-4 py-2 cursor-pointer", active && "bg-gray-200")}>
                     Todas
                   </div>
                 )}
@@ -60,12 +57,7 @@ export default function SelectorDeObras() {
               {obras.map((obra) => (
                 <Listbox.Option key={obra} value={obra}>
                   {({ active }) => (
-                    <div
-                      className={clsx(
-                        "px-4 py-2 cursor-pointer",
-                        active && "bg-gray-200"
-                      )}
-                    >
+                    <div className={clsx("px-4 py-2 cursor-pointer", active && "bg-gray-200")}>
                       {obra}
                     </div>
                   )}
@@ -85,44 +77,32 @@ export default function SelectorDeObras() {
             </h2>
             <div className="bg-primary-light text-white p-4 rounded-lg shadow-md space-y-4 w-full">
               <div className="space-y-2">
-                <div className="flex justify-between">
-                  <span className="font-semibold text-white">
-                    {rendimientos.rendimiento_global_corte_trabajador?.toFixed(3) ?? "-"}
-                  </span>
-                  <span className="text-sm">Corte (trabajador)</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="font-semibold text-white">
-                    {rendimientos.rendimiento_global_doblado_trabajador?.toFixed(3) ?? "-"}
-                  </span>
-                  <span className="text-sm">Doblado (trabajador)</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="font-semibold text-white">
-                    {rendimientos.rendimiento_global_empaquetado_trabajador?.toFixed(3) ?? "-"}
-                  </span>
-                  <span className="text-sm">Empaquetado (trabajador)</span>
-                </div>
+                <RendimientoItem
+                  label="Corte (trabajador)"
+                  valor={rendimientos.rendimiento_global_corte_trabajador}
+                />
+                <RendimientoItem
+                  label="Doblado (trabajador)"
+                  valor={rendimientos.rendimiento_global_doblado_trabajador}
+                />
+                <RendimientoItem
+                  label="Empaquetado (trabajador)"
+                  valor={rendimientos.rendimiento_global_empaquetado_trabajador}
+                />
               </div>
               <div className="space-y-2">
-                <div className="flex justify-between">
-                  <span className="font-semibold text-white">
-                    {rendimientos.rendimiento_global_corte_ayudante?.toFixed(3) ?? "-"}
-                  </span>
-                  <span className="text-sm">Corte (ayudante)</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="font-semibold text-white">
-                    {rendimientos.rendimiento_global_doblado_ayudante?.toFixed(3) ?? "-"}
-                  </span>
-                  <span className="text-sm">Doblado (ayudante)</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="font-semibold text-white">
-                    {rendimientos.rendimiento_global_empaquetado_ayudante?.toFixed(3) ?? "-"}
-                  </span>
-                  <span className="text-sm">Empaquetado (ayudante)</span>
-                </div>
+                <RendimientoItem
+                  label="Corte (ayudante)"
+                  valor={rendimientos.rendimiento_global_corte_ayudante}
+                />
+                <RendimientoItem
+                  label="Doblado (ayudante)"
+                  valor={rendimientos.rendimiento_global_doblado_ayudante}
+                />
+                <RendimientoItem
+                  label="Empaquetado (ayudante)"
+                  valor={rendimientos.rendimiento_global_empaquetado_ayudante}
+                />
               </div>
               <div className="border-t border-white/50 pt-4">
                 <h3 className="text-sm font-semibold mb-1">Suma de rendimientos</h3>
@@ -146,4 +126,14 @@ export default function SelectorDeObras() {
     </div>
   );
 }
+
+function RendimientoItem({ label, valor }: { label: string; valor: number | null }) {
+  return (
+    <div className="flex justify-between">
+      <span className="font-semibold text-white">{valor?.toFixed(3) ?? "-"}</span>
+      <span className="text-sm">{label}</span>
+    </div>
+  );
+}
+
 
