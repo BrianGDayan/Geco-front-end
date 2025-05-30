@@ -1,46 +1,95 @@
-export default function FormularioPlanilla() {
-    return (
-      <div className="mt-9 ">
-        <h1 className="text-xl font-semibold">Ingrese los datos de la planilla</h1>
-        <form className="flex flex-col" action="" method="post">
-          <div className="flex flex-col mt-5">
-            <label htmlFor="nroPlanilla" className="text-lg">Número de planilla</label>
-            <input type="text" id="nroPlanilla" name="nroPlanilla" className="border border-gray-border text-gray-text rounded p-2 mt-1" maxLength={15} required />
-          </div>
-          <div className="flex flex-col mt-4">
-            <label htmlFor="obra" className="text-lg">Obra</label>
-            <input type="text" id="obra" name="obra" className="border border-gray-border rounded p-2 mt-1" maxLength={30} required />
-          </div>
-          <div className="flex flex-col mt-4">
-            <label htmlFor="nroPlano" className="text-lg">Número de plano</label>
-            <input type="text" id="nroPlano" name="nroPlano" className="border border-gray-border rounded p-2 mt-1" maxLength={30} required />
-          </div>
-          <div className="flex flex-col mt-4">
-            <label htmlFor="sector" className="text-lg">Sector</label>
-            <input type="text" id="sector" name="sector" className="border border-gray-border rounded p-2 mt-1" maxLength={30} required />
-          </div>
-          <div className="flex flex-col mt-4">
-            <label htmlFor="encargadoElaborar" className="text-lg">Encargado de elaborar</label>
-            <input type="text" id="encargadoElaborar" name="encargadoElaborar" className="border border-gray-border rounded p-2 mt-1" maxLength={15} required />
-          </div>
-          <div className="flex flex-col mt-4">
-            <label htmlFor="encargadoRevisar" className="text-lg">Encargado de revisar</label>
-            <input type="text" id="encargadoRevisar" name="encargadoRevisar" className="border border-gray-border rounded p-2 mt-1" maxLength={15} required />
-          </div>
-          <div className="flex flex-col mt-4">
-            <label htmlFor="encargadoAprobar" className="text-lg">Encargado de aprobar</label>
-            <input type="text" id="encargadoAprobar" name="encargadoAprobar" className="border border-gray-border rounded p-2 mt-1" maxLength={15} />
-          </div>
-          <div className="flex flex-col mt-4">
-            <label htmlFor="fecha" className="text-lg">Fecha</label>
-            <input type="date" id="fecha" name="fecha" className="border border-gray-border rounded p-2 mt-1" required />
-          </div>
-          <div className="flex flex-col mt-4">
-            <label htmlFor="item" className="text-lg">Item</label>
-            <input type="text" id="item" name="item" className="border border-gray-border rounded p-2 mt-1" maxLength={20} required />
-          </div>
-          <button className="flex justify-center mt-5 text-xl bg-primary hover:bg-primary-dark text-white p-3 rounded-md" >Ingresar</button>
-        </form>
+'use client';
+
+import { useState } from "react";
+import PasoCabecera from "./PasoCabecera";
+import PasoResumen from "./PasoResumen";
+import { PlanillaDto, ElementoDto } from "@/lib/planillas";
+import { AnimatePresence, motion } from "framer-motion";
+import PasoElementos from "./PasoElementos";
+
+export default function CrearPlanillaPage() {
+  const [paso, setPaso] = useState(1);
+  const [cabecera, setCabecera] = useState<Omit<PlanillaDto, "elemento">>({
+    nroPlanilla: "",
+    obra: "",
+    nroPlano: "",
+    sector: "",
+    encargadoElaborar: "",
+    encargadoRevisar: "",
+    encargadoAprobar: "",
+    fecha: new Date(),
+    item: "",
+  });
+
+  const [elementos, setElementos] = useState<ElementoDto[]>([]);
+
+  const siguientePaso = () => setPaso((p) => p + 1);
+  const pasoAnterior = () => setPaso((p) => p - 1);
+
+  const variants = {
+    initial: { opacity: 0, x: 100 },
+    animate: { opacity: 1, x: 0 },
+    exit: { opacity: 0, x: -100 },
+  };
+
+  return (
+    <div className="p-4 max-w-4xl mx-auto">
+      <AnimatePresence mode="wait">
+        {paso === 1 && (
+          <motion.div
+            key="paso1"
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            variants={variants}
+            transition={{ duration: 0.3 }}
+          >
+            <PasoCabecera
+              cabecera={cabecera}
+              setCabecera={setCabecera}
+              onNext={siguientePaso}
+            />
+          </motion.div>
+        )}
+
+        {paso === 2 && (
+          <motion.div
+            key="paso2"
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            variants={variants}
+            transition={{ duration: 0.3 }}
+          >
+            <PasoElementos
+              item={cabecera.item}
+              elementos={elementos}
+              setElementos={setElementos}
+              onNext={siguientePaso}
+              onBack={pasoAnterior}
+            />
+          </motion.div>
+        )}
+
+        {paso === 3 && (
+          <motion.div
+            key="paso3"
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            variants={variants}
+            transition={{ duration: 0.3 }}
+          >
+           <PasoResumen
+            planilla={{
+              ...cabecera,
+              elemento: elementos,
+            }}
+            onBack={pasoAnterior}
+          />
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
-    );
-  }
+  );
+}

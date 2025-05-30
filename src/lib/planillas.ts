@@ -3,7 +3,7 @@ import { fetcher } from "./api";
 export interface DetalleDto {
   especificacion: string;
   posicion: number;
-  tipo: string;
+  tipo: number;
   medidaDiametro: number;
   longitudCorte: number;
   cantidadUnitaria: number;

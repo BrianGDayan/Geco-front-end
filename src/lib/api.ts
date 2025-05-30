@@ -12,21 +12,19 @@ export async function fetcher<T>(url: string, options?: RequestInit): Promise<T>
   });
 
   if (!res.ok) {
-    const errorBody = await res.json();
+  const errorBody = await res.json();
 
-    if (res.status === 401) {
-      // Si el token expiró o no es válido, redirigimos al login
+  if (res.status === 401) {
     if (typeof window !== "undefined") {
       window.location.href = "/login";
     }
-      throw new Error("No autorizado");
-    }
-    
-    const error = new Error("ocurrió un error al realizar la petición");
-    (error as any).info = await res.json();
-    (error as any).status = res.status;
-    throw error;
+    throw new Error("No autorizado");
   }
 
+  const error = new Error(errorBody.message || "Ocurrió un error");
+  (error as any).info = errorBody;
+  (error as any).status = res.status;
+  throw error;
+}
   return res.json();
 }

@@ -36,12 +36,12 @@ export async function middleware(req: NextRequest) {
 
       // Evitar que un rol acceda a la sección del otro
       if (pathname.startsWith("/admin") && rol !== "admin") {
-        return NextResponse.redirect(new URL("/encargado", req.url));
+        return NextResponse.redirect(new URL("/unauthorized", req.url));
+      }
+      if (pathname.startsWith("/encargado") && rol !== "encargado") {
+        return NextResponse.redirect(new URL("/unauthorized", req.url));
       }
 
-      if (pathname.startsWith("/encargado") && rol !== "encargado") {
-        return NextResponse.redirect(new URL("/admin", req.url));
-      }
 
     } catch (error) {
       // Token inválido o expirado: redirigir al login
@@ -53,5 +53,5 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/admin/:path*", "/encargado/:path*", "/login"],
+  matcher: ["/admin", "/admin/:path*", "/encargado", "/encargado/:path*", "/login"],
 };
