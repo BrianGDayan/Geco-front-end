@@ -1,4 +1,4 @@
-const BASE_URL = `${process.env.PUBLIC_API_URL}/api`;
+const BASE_URL = `${process.env.NEXT_PUBLIC_API_URL}/api`;
 
 export async function fetcher<T>(url: string, options?: RequestInit): Promise<T> {
   

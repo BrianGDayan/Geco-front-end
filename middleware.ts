@@ -10,21 +10,22 @@ function getJwtSecretKey() {
 }
 
 export async function middleware(req: NextRequest) {
+  console.log("Middleware ejecutado para ruta:", req.nextUrl.pathname);
+
   const token = req.cookies.get("access_token")?.value;
   const { pathname } = req.nextUrl;
 
-  // Si no hay token y trata de acceder a rutas protegidas
   if (!token && (pathname.startsWith("/admin") || pathname.startsWith("/encargado"))) {
+    console.log("No token y ruta protegida, redirigiendo a login");
     return NextResponse.redirect(new URL("/login", req.url));
   }
 
-  // Si hay token, validarlo
   if (token) {
     try {
       const { payload } = await jwtVerify(token, getJwtSecretKey());
       const rol = payload.rol;
+      console.log("Token válido, rol:", rol);
 
-      // Redirigir desde /login si ya está autenticado
       if (pathname === "/login") {
         if (rol === "admin") {
           return NextResponse.redirect(new URL("/admin", req.url));
@@ -34,17 +35,17 @@ export async function middleware(req: NextRequest) {
         }
       }
 
-      // Evitar que un rol acceda a la sección del otro
       if (pathname.startsWith("/admin") && rol !== "admin") {
+        console.log("Usuario no admin intentando acceder a /admin, redirigiendo");
         return NextResponse.redirect(new URL("/unauthorized", req.url));
       }
       if (pathname.startsWith("/encargado") && rol !== "encargado") {
+        console.log("Usuario no encargado intentando acceder a /encargado, redirigiendo");
         return NextResponse.redirect(new URL("/unauthorized", req.url));
       }
 
-
     } catch (error) {
-      // Token inválido o expirado: redirigir al login
+      console.log("Error en validación JWT:", error);
       return NextResponse.redirect(new URL("/login", req.url));
     }
   }

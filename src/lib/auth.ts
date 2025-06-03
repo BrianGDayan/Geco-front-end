@@ -8,7 +8,6 @@ export interface LoginDto {
 export interface LoginResponse {
   id_usuario: number;
   rol: 'admin' | 'encargado';
-  token: string;
 }
 
 
