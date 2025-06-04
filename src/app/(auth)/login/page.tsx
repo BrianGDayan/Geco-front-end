@@ -19,11 +19,8 @@ export default function Login() {
     try {
       const res = await login(dto);
       console.log("Login exitoso", res);
-      if (res.rol === "admin") {
-        router.push("/admin");
-      }
-      else if (res.rol === "encargado") {
-        router.push("/encargado");
+      if (res.rol === "admin" || res.rol === "encargado") {
+        window.location.href = "/"; 
       }
     }
     catch (error) {
