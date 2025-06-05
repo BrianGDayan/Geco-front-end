@@ -1,7 +1,7 @@
 'use client';
 
 import { ElementoDto, DetalleDto } from "@/lib/planillas";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { PlusCircle, Trash2, ChevronDown, ChevronUp } from "lucide-react";
 
 interface PasoElementosProps {
@@ -21,6 +21,14 @@ export default function PasoElementos({
 }: PasoElementosProps) {
   const [expanded, setExpanded] = useState<Record<number, boolean>>({});
   const [errores, setErrores] = useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+    if (elementos.length === 0) {
+      setElementos([{ nombre: '', detalle: [{} as DetalleDto] }]);
+      setExpanded({ 0: true });
+    }
+  }, []);
+
 
   const esCampoInvalido = (clave: string) => errores[clave];
 

@@ -1,8 +1,13 @@
-export default function PlanillasActuales() {
-    return (
-      <div>
-        <h1>Listado de Planillas Actuales</h1>
-        <p>Aquí se mostrará el listado de planillas actuales.</p>
-      </div>
-    );
-  }
+import { getPlanillasEnCurso } from '@/lib/planillas';
+import PlanillaListAdmin from '@/components/PlanillaListAdmin';
+
+export default async function PlanillasEnCursoPage() {
+  const planillas = await getPlanillasEnCurso();
+
+  return (
+    <div className="p-6">
+      <h1 className="text-2xl font-bold mb-6">Planillas en Curso</h1>
+      <PlanillaListAdmin planillas={planillas} tipo="en-curso" />
+    </div>
+  );
+}

@@ -14,7 +14,7 @@ export interface DetalleDto {
 export interface UpdateDetalleDto {
   especificacion?: string;
   posicion?: number;
-  tipo?: string;
+  tipo?: number;
   medidaDiametro?: number;
   longitudCorte?: number;
   cantidadUnitaria?: number;
@@ -42,15 +42,20 @@ export interface PlanillaDto {
 
 export interface RegistroResponse {
   id_registro: number;
-  cantidad: true,
-  fecha: true,
-  horas_trabajador: true,
-  horas_ayudante: true,
-  rendimiento_trabajador: true,
-  rendimiento_ayudante: true,
-  trabajador: { nombre: string };
-  ayudante: { nombre: string } | null;
+  cantidad: number;
+  fecha: Date;
+  horas_trabajador: number;
+  horas_ayudante: number;
+  rendimiento_trabajador: number;
+  rendimiento_ayudante: number;
+  trabajador: {
+    nombre: string;
+  };
+  ayudante: {
+    nombre: string;
+  } | null;
 }
+
 
 export interface DetalleTareaResponse {
   id_detalle_tarea: number;
