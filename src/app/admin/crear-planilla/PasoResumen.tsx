@@ -20,7 +20,7 @@ export default function PasoResumen({ planilla, onBack }: PasoResumenProps) {
     try {
       const response = await CreatePlanilla(planilla);
       console.log("Planilla creada con éxito:", response);
-      router.push("/admin/planillas");
+      router.push("/admin");
     } catch (err: any) {
       console.error("Error al enviar la planilla:", err);
       setError("Ocurrió un error al enviar la planilla.");
