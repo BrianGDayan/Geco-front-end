@@ -1,6 +1,6 @@
-// app/admin/planillas-en-curso/[nroPlanilla]/tarea/[idTarea]/page.tsx
+// app/encargado/planillas-en-curso/[nroPlanilla]/tarea/[idTarea]/registrar/page.tsx
 import { getPlanillaByNro } from '@/lib/planillas';
-import AdminVista from '@/components/AdminVista';
+import RegistroVista from '@/app/encargado/RegistroVista';
 
 interface Params {
   params: {
@@ -9,15 +9,14 @@ interface Params {
   };
 }
 
-export default async function AdminVerDatosPage({ params }: Params) {
+export default async function RegistrarDatosPage({ params }: Params) {
   const { nroPlanilla, idTarea } = params;
-  // Obtenemos la planilla completa con los detalles y registros para esta tarea
   const planilla = await getPlanillaByNro(nroPlanilla, Number(idTarea));
 
   return (
     <div className="min-h-screen bg-gray-bg">
       <div className="max-w-7xl mx-auto py-6 px-4">
-        <AdminVista planilla={planilla} idTarea={Number(idTarea)} />
+        <RegistroVista planilla={planilla} />
       </div>
     </div>
   );
