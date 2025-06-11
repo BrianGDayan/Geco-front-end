@@ -1,23 +1,29 @@
 import { NavbarLink } from "./NavbarLink";
-import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react'
+import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react';
 
 export default function Navbar() {
-  return(
+  return (
     <nav className="bg-primary-mid border-t border-primary-dark/40 text-white shadow-md h-14 flex items-center px-4">
       <div className="w-full flex justify-center">
         <ul className="flex space-x-4 h-full">
-          <li className="h-full flex items-center"><NavbarLink href="/admin"> Inicio </NavbarLink></li>
-          <li className="h-full flex items-center"><NavbarLink href="/admin/crear-planilla"> Crear planilla </NavbarLink></li>
+          <li className="h-full flex items-center">
+            <NavbarLink href="/admin">Inicio</NavbarLink>
+          </li>
+          <li className="h-full flex items-center">
+            <NavbarLink href="/admin/crear-planilla">Crear planilla</NavbarLink>
+          </li>
           <li className="h-full flex items-center relative">
             <Menu as="div" className="relative">
-              <MenuButton className="px-4 py-2 rounded-md transition-colors duration-200 hover:bg-primary-dark">Listado de planillas</MenuButton>
+              <MenuButton className="px-4 py-2 rounded-md transition-colors duration-200 hover:bg-primary-dark">
+                Listado de planillas
+              </MenuButton>
               <MenuItems className="absolute mt-2 w-56 rounded-md shadow-lg bg-primary-dark ring-1 ring-black ring-opacity-5 focus:outline-none z-50">
                 <div className="p-2">
                   <MenuItem>
-                    <NavbarLink href="/admin/planillas-completadas" isDropdown>Completadas</NavbarLink>
+                    <NavbarLink href="/admin/planillas/completadas" isDropdown>Completadas</NavbarLink>
                   </MenuItem>
                   <MenuItem>
-                    <NavbarLink href="/admin/planillas-en-curso" isDropdown>En curso</NavbarLink>
+                    <NavbarLink href="/admin/planillas/en-curso" isDropdown>En curso</NavbarLink>
                   </MenuItem>
                 </div>
               </MenuItems>
@@ -26,5 +32,5 @@ export default function Navbar() {
         </ul>
       </div>
     </nav>
-  )
+  );
 }

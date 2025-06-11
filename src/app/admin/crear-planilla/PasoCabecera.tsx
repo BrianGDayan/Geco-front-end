@@ -71,8 +71,8 @@ export default function PasoCabecera({
   const esCampoInvalido = (campo: string) => camposInvalidos.includes(campo);
 
   return (
-    <div className="mt-9">
-      <h1 className="text-xl font-semibold">Ingrese los datos de la planilla</h1>
+    <div>
+      <h1 className="text-2xl font-bold text-center">Ingrese los datos de la planilla</h1>
       <form className="flex flex-col" onSubmit={(e) => e.preventDefault()}>
         {/* Campo: Número de planilla */}
         <div className="flex flex-col mt-5">

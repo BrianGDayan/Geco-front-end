@@ -11,8 +11,8 @@ interface Props {
 export default function PlanillaListEncargado({ planillas }: Props) {
   const router = useRouter();
 
-  const handleRegistrar = (nro: string, tarea: number) => {
-    router.push(`/encargado/planillas-en-curso/${nro}/tarea/${tarea}/registrar`);
+  const goToRegistro = (nro: string, tarea: number) => {
+    router.push(`/encargado/${nro}/${tarea}`);
   };
 
   return (
@@ -22,13 +22,14 @@ export default function PlanillaListEncargado({ planillas }: Props) {
           key={p.nro_planilla}
           planilla={p}
           mostrarEliminar={false}
-          onCorte={() => handleRegistrar(p.nro_planilla, 1)}
-          onDoblado={() => handleRegistrar(p.nro_planilla, 2)}
-          onEmpaque={() => handleRegistrar(p.nro_planilla, 3)}
+          onCorte={() => goToRegistro(p.nro_planilla, 1)}
+          onDoblado={() => goToRegistro(p.nro_planilla, 2)}
+          onEmpaque={() => goToRegistro(p.nro_planilla, 3)}
           modo="encargado"
         />
       ))}
     </div>
   );
 }
+
 

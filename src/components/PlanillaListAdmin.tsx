@@ -20,13 +20,13 @@ export default function PlanillaListAdmin({ planillas, tipo }: Props) {
           planilla={p}
           mostrarEliminar={tipo === 'completadas'}
           onCorte={(nro) =>
-            router.push(`/admin/planillas-${tipo}/${nro}/tarea/1`)
+            router.push(`/admin/planillas/${tipo}/${nro}/1`)
           }
           onDoblado={(nro) =>
-            router.push(`/admin/planillas-${tipo}/${nro}/tarea/2`)
-          }
+            router.push(`/admin/planillas/${tipo}/${nro}/2`)
+         }
           onEmpaque={(nro) =>
-            router.push(`/admin/planillas-${tipo}/${nro}/tarea/3`)
+            router.push(`/admin/planillas/${tipo}/${nro}/3`)
           }
           modo="admin"
         />

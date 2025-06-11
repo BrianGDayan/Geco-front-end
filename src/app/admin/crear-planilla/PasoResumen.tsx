@@ -31,7 +31,7 @@ export default function PasoResumen({ planilla, onBack }: PasoResumenProps) {
 
   return (
     <div className="space-y-6">
-      <h2 className="text-xl font-bold">Resumen de la planilla</h2>
+      <h2 className="text-2xl font-bold text-center">Resumen de la planilla</h2>
 
       <div className="border p-4 rounded-md bg-gray-50 space-y-1">
         <p><strong>Obra:</strong> {planilla.obra}</p>

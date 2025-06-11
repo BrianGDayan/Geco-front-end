@@ -92,6 +92,8 @@ export interface PlanillaResponse {
   fecha: Date;
   revision: number;
   item: string;
+  peso_total: number;
+  pesos_diametro: Array<{ diametro: number; peso: number }>;
   rendimiento_global_corte_trabajador: number;
   rendimiento_global_doblado_trabajador: number;
   rendimiento_global_empaquetado_trabajador: number;
@@ -106,6 +108,7 @@ export interface PlanillaSummary {
   obra: string;
   nro_plano: string;
   sector: string;
+  fecha: Date;
   item: string;
   progreso: number;
 }

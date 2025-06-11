@@ -98,8 +98,8 @@ export default function PasoElementos({
   };
 
   return (
-    <div className="space-y-6 p-4">
-      <h2 className="text-xl font-semibold">Ingrese los elementos de la planilla</h2>
+    <div className="space-y-6">
+      <h2 className="text-2xl font-bold text-center">Ingrese los elementos de la planilla</h2>
       <input
         type="text"
         placeholder={item}

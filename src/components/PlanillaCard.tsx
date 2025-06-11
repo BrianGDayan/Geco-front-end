@@ -30,18 +30,22 @@ export default function PlanillaCard({
   };
 
   const textoCorte =
-    modo === 'admin' ? 'Ver datos de corte' : 'Registrar datos de corte';
+    modo === 'admin' ? 'Mostrar datos de corte' : 'Registrar datos de corte';
   const textoDoblado =
-    modo === 'admin' ? 'Ver datos de doblado' : 'Registrar datos de doblado';
+    modo === 'admin' ? 'Mostrar datos de doblado' : 'Registrar datos de doblado';
   const textoEmpaque =
-    modo === 'admin' ? 'Ver datos de empaquetado' : 'Registrar datos de empaquetado';
+    modo === 'admin' ? 'Mostrar datos de empaquetado' : 'Registrar datos de empaquetado';
 
   if (!visible) return null;
 
   return (
     <div className="border rounded-lg bg-white shadow overflow-hidden">
       <div className="grid grid-cols-6 text-center text-sm">
-        <div className="p-3 border-r text-left">
+        <div className="p-3 border-r flex flex-col items-center justify-center">
+          <span className="font-semibold">Planilla N°:</span>
+          <span>{planilla.nro_planilla}</span>
+        </div>
+        <div className="p-3 border-r">
           <span className="block font-semibold">Obra:</span>
           {planilla.obra}
         </div>
@@ -66,22 +70,19 @@ export default function PlanillaCard({
           {planilla.nro_plano}
         </div>
         <div className="p-3 border-r">
-          <span className="block font-semibold">Item:</span>
-          {planilla.item}
-        </div>
-        <div className="p-3 flex items-center justify-center">
-          {mostrarEliminar && (
-            <button onClick={handleDelete}>
-              <Trash2 size={24} className="text-gray-700 hover:text-red-600" />
-            </button>
-          )}
+          <span className="block font-semibold">Fecha:</span>
+          {planilla.fecha.toLocaleDateString('es-ES', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+          })}
         </div>
       </div>
 
-      <div className="flex items-center justify-center gap-4 bg-gray-100 p-4">
+      <div className="flex items-center justify-between gap-4 bg-gray-100 px-4 py-4 flex-wrap">
         <button
           onClick={() => onCorte && onCorte(planilla.nro_planilla)}
-          className="px-4 py-2 bg-[#226FB7] text-white rounded hover:bg-blue-600"
+          className="px-4 py-2 bg-primary text-white rounded hover:bg-primary-dark"
         >
           {textoCorte}
         </button>
@@ -97,6 +98,15 @@ export default function PlanillaCard({
         >
           {textoEmpaque}
         </button>
+        {mostrarEliminar && (
+          <button
+            onClick={handleDelete}
+            title="Eliminar planilla"
+            className="p-2 rounded-full bg-gray-200 hover:bg-red-100 hover:text-red-600 transition-colors"
+          >
+            <Trash2 size={24} />
+          </button>
+        )}
       </div>
     </div>
   );

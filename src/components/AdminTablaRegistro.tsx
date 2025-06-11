@@ -1,4 +1,3 @@
-// components/AdminTablaRegistro.tsx
 'use client';
 
 import React, { useState } from 'react';
@@ -13,16 +12,14 @@ interface Props {
 }
 
 export default function AdminTablaRegistro({ planilla, detalles, idTarea, onSave }: Props) {
-  // Estado local para editar cada registro en la tabla
-  // Clave: id_registro, valor: { cantidad, horas_trabajador, horas_ayudante }
   const [ediciones, setEdiciones] = useState<Record<number, {
     cantidad: number;
     horasTrabajador: number;
     horasAyudante: number;
   }>>(() => {
-    const initial: typeof ediciones = {};
+    const initial: Record<number, any> = {};
     detalles.forEach((d) => {
-      d.detalle_tarea[0].registro.forEach((r: RegistroResponse) => {
+      d.detalle_tarea[0].registro.forEach((r) => {
         initial[r.id_registro] = {
           cantidad: r.cantidad,
           horasTrabajador: r.horas_trabajador,
@@ -36,21 +33,18 @@ export default function AdminTablaRegistro({ planilla, detalles, idTarea, onSave
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Función para guardar todas las ediciones
   const guardarCambios = async () => {
     setIsSaving(true);
     setError(null);
     try {
-      // Iteramos cada registro editado y enviamos PATCH
       for (const [idReg, data] of Object.entries(ediciones)) {
-        const id = Number(idReg);
-        await UpdateRegistro(id, {
+        await UpdateRegistro(Number(idReg), {
           cantidad: data.cantidad,
           horasTrabajador: data.horasTrabajador,
           horasAyudante: data.horasAyudante,
         });
       }
-      onSave(); // refrescar vista
+      onSave();
     } catch (err: any) {
       console.error(err);
       setError(err.message || 'Error al guardar cambios');
@@ -76,50 +70,48 @@ export default function AdminTablaRegistro({ planilla, detalles, idTarea, onSave
             <th className="py-2 px-3 border border-primary-dark">Fecha</th>
             <th className="py-2 px-3 border border-primary-dark">Cantidad Oficial</th>
             <th className="py-2 px-3 border border-primary-dark">Horas Oficial</th>
-            <th className="py-2 px-3 border border-primary-dark">Cantidad Ayudante</th>
             <th className="py-2 px-3 border border-primary-dark">Horas Ayudante</th>
           </tr>
         </thead>
         <tbody>
           {detalles.map((d, idxDetalle) =>
             d.detalle_tarea[0].registro.map((r: RegistroResponse, idxReg) => {
-              const filaClave = `${d.posicion}-${r.id_registro}`;
+              const rowSpan = d.detalle_tarea[0].registro.length;
               const valores = ediciones[r.id_registro];
               return (
-                <tr key={filaClave} className="border-t border-gray-border">
+                <tr key={r.id_registro} className="border-t border-gray-border">
                   {idxReg === 0 && (
                     <>
-                      {/* Sólo en la primera fila de este detalle mostramos columnas agrupadas */}
-                      <td rowSpan={d.detalle_tarea[0].registro.length} className="py-2 px-3 border border-gray-border">
-                        {d.posicion.startsWith('P') ? d.posicion : `P${idxDetalle + 1}`}
+                      <td rowSpan={rowSpan} className="py-2 px-3 border border-gray-border">
+                        {d.nombre_elemento}
                       </td>
-                      <td rowSpan={d.detalle_tarea[0].registro.length} className="py-2 px-3 border border-gray-border">
+                      <td rowSpan={rowSpan} className="py-2 px-3 border border-gray-border">
+                        {d.especificacion}
+                      </td>
+                      <td rowSpan={rowSpan} className="py-2 px-3 border border-gray-border">
                         {d.posicion}
                       </td>
-                      <td rowSpan={d.detalle_tarea[0].registro.length} className="py-2 px-3 border border-gray-border">
-                        {d.posicion}
-                      </td>
-                      <td rowSpan={d.detalle_tarea[0].registro.length} className="py-2 px-3 border border-gray-border">
+                      <td rowSpan={rowSpan} className="py-2 px-3 border border-gray-border">
                         {d.tipo}
                       </td>
-                      <td rowSpan={d.detalle_tarea[0].registro.length} className="py-2 px-3 border border-gray-border">
+                      <td rowSpan={rowSpan} className="py-2 px-3 border border-gray-border">
                         {d.medida_diametro}
                       </td>
-                      <td rowSpan={d.detalle_tarea[0].registro.length} className="py-2 px-3 border border-gray-border">
+                      <td rowSpan={rowSpan} className="py-2 px-3 border border-gray-border">
                         {d.longitud_corte}
                       </td>
-                      <td rowSpan={d.detalle_tarea[0].registro.length} className="py-2 px-3 border border-gray-border bg-primary-light text-white font-semibold">
+                      <td rowSpan={rowSpan} className="py-2 px-3 border border-gray-border bg-primary-light text-white font-semibold">
                         {d.cantidad_total}
                       </td>
                     </>
                   )}
 
-                  {/* Fecha (sólo lectura) */}
+                  {/* Fecha */}
                   <td className="py-2 px-3 border border-gray-border">
                     {new Date(r.fecha).toLocaleDateString('es-ES')}
                   </td>
 
-                  {/* Cantidad Oficial (input) */}
+                  {/* Inputs de edición */}
                   <td className="py-2 px-3 border border-gray-border">
                     <input
                       type="number"
@@ -136,8 +128,6 @@ export default function AdminTablaRegistro({ planilla, detalles, idTarea, onSave
                       className="w-full bg-gray-bg border border-gray-border rounded-md px-2 py-1 text-sm text-gray-text"
                     />
                   </td>
-
-                  {/* Horas Oficial (input) */}
                   <td className="py-2 px-3 border border-gray-border">
                     <input
                       type="number"
@@ -155,26 +145,6 @@ export default function AdminTablaRegistro({ planilla, detalles, idTarea, onSave
                       className="w-full bg-gray-bg border border-gray-border rounded-md px-2 py-1 text-sm text-gray-text"
                     />
                   </td>
-
-                  {/* Cantidad Ayudante (input) */}
-                  <td className="py-2 px-3 border border-gray-border">
-                    <input
-                      type="number"
-                      value={valores.cantidad} // Si el ayudante no tiene “cantidad”, duplicamos
-                      onChange={(e) =>
-                        setEdiciones((prev) => ({
-                          ...prev,
-                          [r.id_registro]: {
-                            ...prev[r.id_registro],
-                            cantidad: Number(e.target.value),
-                          },
-                        }))
-                      }
-                      className="w-full bg-gray-bg border border-gray-border rounded-md px-2 py-1 text-sm text-gray-text"
-                    />
-                  </td>
-
-                  {/* Horas Ayudante (input) */}
                   <td className="py-2 px-3 border border-gray-border">
                     <input
                       type="number"
@@ -199,7 +169,7 @@ export default function AdminTablaRegistro({ planilla, detalles, idTarea, onSave
         </tbody>
       </table>
 
-      {/* Botón central para “Guardar cambios” */}
+      {/* Guardar cambios */}
       <div className="flex justify-center my-4">
         <button
           onClick={guardarCambios}
