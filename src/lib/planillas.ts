@@ -92,6 +92,7 @@ export interface PlanillaResponse {
   fecha: Date;
   revision: number;
   item: string;
+  progreso: number;    
   peso_total: number;
   pesos_diametro: Array<{ diametro: number; peso: number }>;
   rendimiento_global_corte_trabajador: number;

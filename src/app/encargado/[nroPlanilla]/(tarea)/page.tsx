@@ -1,6 +1,6 @@
 // app/encargado/planillas-en-curso/[nroPlanilla]/tarea/[idTarea]/registrar/page.tsx
 import { getPlanillaByNro } from '@/lib/planillas';
-import RegistroVista from '@/app/encargado/RegistroVista';
+import RegistroVista from '@/components/RegistroVista';
 
 interface Params {
   params: {

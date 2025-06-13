@@ -1,22 +1,33 @@
+// components/AdminTablaRegistro.tsx
 'use client';
 
 import React, { useState } from 'react';
-import { DetalleResponse, RegistroResponse, PlanillaResponse } from '@/lib/planillas';
+import {
+  PlanillaResponse,
+  RegistroResponse,
+  DetalleResponse,
+} from '@/lib/planillas';
 import { UpdateRegistro } from '@/lib/registros';
+
+type DetalleConNombre = DetalleResponse & { nombre_elemento: string };
 
 interface Props {
   planilla: PlanillaResponse;
-  detalles: DetalleResponse[];
+  detalles: DetalleConNombre[];
   idTarea: number;
   onSave: () => void;
 }
 
-export default function AdminTablaRegistro({ planilla, detalles, idTarea, onSave }: Props) {
-  const [ediciones, setEdiciones] = useState<Record<number, {
-    cantidad: number;
-    horasTrabajador: number;
-    horasAyudante: number;
-  }>>(() => {
+export default function AdminTablaRegistro({
+  planilla,
+  detalles,
+  idTarea,
+  onSave,
+}: Props) {
+  const [ediciones, setEdiciones] = useState<Record<
+    number,
+    { cantidad: number; horasTrabajador: number; horasAyudante: number }
+  >>(() => {
     const initial: Record<number, any> = {};
     detalles.forEach((d) => {
       d.detalle_tarea[0].registro.forEach((r) => {
@@ -68,13 +79,17 @@ export default function AdminTablaRegistro({ planilla, detalles, idTarea, onSave
               Cantidad Total
             </th>
             <th className="py-2 px-3 border border-primary-dark">Fecha</th>
-            <th className="py-2 px-3 border border-primary-dark">Cantidad Oficial</th>
+            <th className="py-2 px-3 border border-primary-dark">
+              Cantidad Oficial
+            </th>
             <th className="py-2 px-3 border border-primary-dark">Horas Oficial</th>
-            <th className="py-2 px-3 border border-primary-dark">Horas Ayudante</th>
+            <th className="py-2 px-3 border border-primary-dark">
+              Horas Ayudante
+            </th>
           </tr>
         </thead>
         <tbody>
-          {detalles.map((d, idxDetalle) =>
+          {detalles.map((d) =>
             d.detalle_tarea[0].registro.map((r: RegistroResponse, idxReg) => {
               const rowSpan = d.detalle_tarea[0].registro.length;
               const valores = ediciones[r.id_registro];
@@ -82,36 +97,53 @@ export default function AdminTablaRegistro({ planilla, detalles, idTarea, onSave
                 <tr key={r.id_registro} className="border-t border-gray-border">
                   {idxReg === 0 && (
                     <>
-                      <td rowSpan={rowSpan} className="py-2 px-3 border border-gray-border">
+                      <td
+                        rowSpan={rowSpan}
+                        className="py-2 px-3 border border-gray-border text-center"
+                      >
                         {d.nombre_elemento}
                       </td>
-                      <td rowSpan={rowSpan} className="py-2 px-3 border border-gray-border">
+                      <td
+                        rowSpan={rowSpan}
+                        className="py-2 px-3 border border-gray-border"
+                      >
                         {d.especificacion}
                       </td>
-                      <td rowSpan={rowSpan} className="py-2 px-3 border border-gray-border">
+                      <td
+                        rowSpan={rowSpan}
+                        className="py-2 px-3 border border-gray-border"
+                      >
                         {d.posicion}
                       </td>
-                      <td rowSpan={rowSpan} className="py-2 px-3 border border-gray-border">
+                      <td
+                        rowSpan={rowSpan}
+                        className="py-2 px-3 border border-gray-border"
+                      >
                         {d.tipo}
                       </td>
-                      <td rowSpan={rowSpan} className="py-2 px-3 border border-gray-border">
+                      <td
+                        rowSpan={rowSpan}
+                        className="py-2 px-3 border border-gray-border"
+                      >
                         {d.medida_diametro}
                       </td>
-                      <td rowSpan={rowSpan} className="py-2 px-3 border border-gray-border">
+                      <td
+                        rowSpan={rowSpan}
+                        className="py-2 px-3 border border-gray-border"
+                      >
                         {d.longitud_corte}
                       </td>
-                      <td rowSpan={rowSpan} className="py-2 px-3 border border-gray-border bg-primary-light text-white font-semibold">
+                      <td
+                        rowSpan={rowSpan}
+                        className="py-2 px-3 border border-gray-border bg-primary-light text-white font-semibold"
+                      >
                         {d.cantidad_total}
                       </td>
                     </>
                   )}
-
-                  {/* Fecha */}
                   <td className="py-2 px-3 border border-gray-border">
                     {new Date(r.fecha).toLocaleDateString('es-ES')}
                   </td>
-
-                  {/* Inputs de edición */}
                   <td className="py-2 px-3 border border-gray-border">
                     <input
                       type="number"
@@ -169,7 +201,6 @@ export default function AdminTablaRegistro({ planilla, detalles, idTarea, onSave
         </tbody>
       </table>
 
-      {/* Guardar cambios */}
       <div className="flex justify-center my-4">
         <button
           onClick={guardarCambios}
