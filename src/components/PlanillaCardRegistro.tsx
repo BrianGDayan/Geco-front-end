@@ -1,30 +1,38 @@
 // components/PlanillaCardRegistro.tsx
 'use client';
 
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { PlusCircle } from 'lucide-react';
 import { DetalleResponse, RegistroResponse } from '@/lib/planillas';
 import RegistroModal from './RegistroModal';
+import EspecificacionImagen from '@/components/EspecificacionImagen';
 
 interface Props {
   elementoNombre: string;
-  detalle: DetalleResponse;
+  detalles: DetalleResponse[];
   idTarea: number;
+  onRegistroGuardado: () => void;
 }
+
+const isImageUrl = (s: string) => /\.(jpe?g|png|gif|webp)$/i.test(s);
 
 export default function PlanillaCardRegistro({
   elementoNombre,
-  detalle,
+  detalles,
   idTarea,
+  onRegistroGuardado,
 }: Props) {
-  const [showModal, setShowModal] = useState(false);
-  const tareaObj = detalle.detalle_tarea[0];
-  const registros: RegistroResponse[] = tareaObj?.registro ?? [];
+  const [showModal, setShowModal] = useState<{
+    idDetalle: number;
+    idDetalleTarea: number;
+    cantidadTotal: number;
+  } | null>(null);
 
-  const horasSub = idTarea === 2
-    ? ['Dob.', 'Ayu.']
-    : idTarea === 1
+  const horasSub: string[] =
+    idTarea === 1
       ? ['Cort.1', 'Cort.2']
+      : idTarea === 2
+      ? ['Dob.', 'Ayu.']
       : ['Emp.1', 'Emp.2'];
 
   return (
@@ -38,9 +46,7 @@ export default function PlanillaCardRegistro({
             <thead>
               <tr className="bg-primary-dark text-white">
                 <th rowSpan={2} className="py-2 px-3 border">Detalle</th>
-                <th rowSpan={2} className="py-2 px-3 border bg-primary-light text-white">
-                  Cantidad Total
-                </th>
+                <th rowSpan={2} className="py-2 px-3 border bg-primary-light text-white">Cant. Total</th>
                 <th rowSpan={2} className="py-2 px-3 border">Tipo</th>
                 <th rowSpan={2} className="py-2 px-3 border">Ø (mm)</th>
                 <th rowSpan={2} className="py-2 px-3 border">Long. Corte (m)</th>
@@ -56,77 +62,100 @@ export default function PlanillaCardRegistro({
               </tr>
             </thead>
             <tbody>
-              {registros.length > 0 ? (
-                registros.map((reg, idx) => (
-                  <tr key={reg.id_registro} className="border-t">
-                    {idx === 0 && (
-                      <>
-                        <td rowSpan={registros.length} className="py-2 px-3 border">
-                          {detalle.especificacion}
+              {detalles.map((detalle) => {
+                const tareaObj = detalle.detalle_tarea[0];
+                const registros: RegistroResponse[] = tareaObj?.registro ?? [];
+                const acumulado = registros.reduce((sum, r) => sum + r.cantidad, 0);
+                const puedeAgregar = acumulado < detalle.cantidad_total;
+
+                // función para renderizar celda "Detalle"
+                const renderEspecificacion = () =>
+                  isImageUrl(detalle.especificacion)
+                    ? <EspecificacionImagen publicId={detalle.especificacion} width={100} height={100} />
+                    : detalle.especificacion;
+
+                if (registros.length > 0) {
+                  return registros.map((reg, idx) => (
+                    <tr key={`${detalle.id_detalle}-${reg.id_registro}`} className="border-t">
+                      {idx === 0 && (
+                        <>
+                          <td rowSpan={registros.length} className="py-2 px-3 border">
+                            {renderEspecificacion()}
+                          </td>
+                          <td rowSpan={registros.length} className="py-2 px-3 border bg-primary-light text-white font-semibold">
+                            {detalle.cantidad_total}
+                          </td>
+                          <td rowSpan={registros.length} className="py-2 px-3 border">{detalle.tipo}</td>
+                          <td rowSpan={registros.length} className="py-2 px-3 border">{detalle.medida_diametro}</td>
+                          <td rowSpan={registros.length} className="py-2 px-3 border">{detalle.longitud_corte}</td>
+                        </>
+                      )}
+                      <td className="py-2 px-3 border">{new Date(reg.fecha).toLocaleDateString('es-ES')}</td>
+                      <td className="py-2 px-3 border">{reg.cantidad}</td>
+                      <td className="py-2 px-3 border">{reg.horas_trabajador}</td>
+                      <td className="py-2 px-3 border">{reg.horas_ayudante}</td>
+                      {idx === 0 && (
+                        <td rowSpan={registros.length} className="py-2 px-3 border text-center">
+                          <button
+                            onClick={() =>
+                              setShowModal({
+                                idDetalle: detalle.id_detalle,
+                                idDetalleTarea: tareaObj.id_detalle_tarea,
+                                cantidadTotal: detalle.cantidad_total,
+                              })
+                            }
+                            disabled={!puedeAgregar}
+                            className={`inline-flex items-center justify-center w-12 h-12 rounded-full transition ${
+                              puedeAgregar
+                                ? 'bg-[#1E7F66] text-white hover:bg-[#279974]'
+                                : 'bg-gray-300 text-white cursor-not-allowed'
+                            }`}
+                          >
+                            <PlusCircle size={20} />
+                          </button>
                         </td>
-                        <td rowSpan={registros.length} className="py-2 px-3 border bg-primary-light text-white font-semibold">
-                          {detalle.cantidad_total}
-                        </td>
-                        <td rowSpan={registros.length} className="py-2 px-3 border">
-                          {detalle.tipo}
-                        </td>
-                        <td rowSpan={registros.length} className="py-2 px-3 border">
-                          {detalle.medida_diametro}
-                        </td>
-                        <td rowSpan={registros.length} className="py-2 px-3 border">
-                          {detalle.longitud_corte}
-                        </td>
-                      </>
-                    )}
+                      )}
+                    </tr>
+                  ));
+                }
+
+                return (
+                  <tr key={`vacio-${detalle.id_detalle}`} className="border-t">
                     <td className="py-2 px-3 border">
-                      {new Date(reg.fecha).toLocaleDateString('es-ES')}
+                      {renderEspecificacion()}
                     </td>
-                    <td className="py-2 px-3 border">{reg.cantidad}</td>
-                    <td className="py-2 px-3 border">{reg.horas_trabajador}</td>
-                    <td className="py-2 px-3 border">{reg.horas_ayudante}</td>
-                    {idx === 0 && (
-                      <td rowSpan={registros.length} className="py-2 px-3 border text-center">
-   <button
-  onClick={() => setShowModal(true)}
-  className="relative w-12 h-12 bg-accent text-white rounded-full hover:bg-accent-light transition p-0"
->
-  <PlusCircle
-    size={20}
-    className="absolute inset-0 m-auto"
-  />
-</button>
-
-
-                      </td>
-                    )}
+                    <td className="py-2 px-3 border bg-primary-light text-white font-semibold">
+                      {detalle.cantidad_total}
+                    </td>
+                    <td className="py-2 px-3 border">{detalle.tipo}</td>
+                    <td className="py-2 px-3 border">{detalle.medida_diametro}</td>
+                    <td className="py-2 px-3 border">{detalle.longitud_corte}</td>
+                    <td className="py-2 px-3 border">—</td>
+                    <td className="py-2 px-3 border">—</td>
+                    <td className="py-2 px-3 border">—</td>
+                    <td className="py-2 px-3 border">—</td>
+                    <td className="py-2 px-3 border text-center">
+                      <button
+                        onClick={() =>
+                          setShowModal({
+                            idDetalle: detalle.id_detalle,
+                            idDetalleTarea: tareaObj.id_detalle_tarea,
+                            cantidadTotal: detalle.cantidad_total,
+                          })
+                        }
+                        disabled={detalle.cantidad_total <= 0}
+                        className={`inline-flex items-center justify-center w-12 h-12 rounded-full transition ${
+                          detalle.cantidad_total > 0
+                            ? 'bg-[#1E7F66] text-white hover:bg-[#279974]'
+                            : 'bg-gray-300 text-white cursor-not-allowed'
+                        }`}
+                      >
+                        <PlusCircle size={20} />
+                      </button>
+                    </td>
                   </tr>
-                ))
-              ) : (
-                <tr className="border-t">
-                  <td className="py-2 px-3 border">{detalle.especificacion}</td>
-                  <td className="py-2 px-3 border bg-primary-light text-white font-semibold">
-                    {detalle.cantidad_total}
-                  </td>
-                  <td className="py-2 px-3 border">{detalle.tipo}</td>
-                  <td className="py-2 px-3 border">{detalle.medida_diametro}</td>
-                  <td className="py-2 px-3 border">{detalle.longitud_corte}</td>
-
-                  {/* Cuatro celdas separadas para fecha, cantidad y dos horas */}
-                  <td className="py-2 px-3 border">—</td>
-                  <td className="py-2 px-3 border">—</td>
-                  <td className="py-2 px-3 border">—</td>
-                  <td className="py-2 px-3 border">—</td>
-
-                  <td className="py-2 px-3 border text-center">
-                    <button
-                      onClick={() => setShowModal(true)}
-                      className="inline-flex items-center justify-center w-12 h-12 bg-accent text-white rounded-full hover:bg-accent-light transition"
-                    >
-                      <PlusCircle size={20} />
-                    </button>
-                  </td>
-                </tr>
-              )}
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -134,10 +163,12 @@ export default function PlanillaCardRegistro({
 
       {showModal && (
         <RegistroModal
-          idDetalleTarea={tareaObj.id_detalle_tarea}
-          cantidadTotal={detalle.cantidad_total}
+          idDetalle={showModal.idDetalle}
+          idDetalleTarea={showModal.idDetalleTarea}
+          cantidadTotal={showModal.cantidadTotal}
           idTarea={idTarea}
-          onClose={() => setShowModal(false)}
+          onClose={() => setShowModal(null)}
+          onSaved={onRegistroGuardado}
         />
       )}
     </>

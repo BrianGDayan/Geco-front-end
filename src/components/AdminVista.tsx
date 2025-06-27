@@ -1,42 +1,49 @@
 // components/AdminVista.tsx
 'use client';
 
-import React, { useState } from 'react';
-import { PlanillaResponse, DetalleResponse } from '@/lib/planillas';
-import AdminHeader from './AdminHeader';
-import AdminTablaRegistro from './AdminTablaRegistro';
-import AdminFooter from './AdminFooter';
+import React from "react";
+import useSWR from "swr";
+import { getPlanillaByNro, PlanillaResponse } from "@/lib/planillas";
+import AdminHeader from "./AdminHeader";
+import AdminTablaRegistro from "./AdminTablaRegistro";
+import AdminFooter from "./AdminFooter";
 
 interface Props {
-  planilla: PlanillaResponse;
+  nroPlanilla: string;
   idTarea: number;
 }
 
-export default function AdminVista({ planilla, idTarea }: Props) {
-  const [key, setKey] = useState(0);
-  const reload = () => setKey((k) => k + 1);
+export default function AdminVista({ nroPlanilla, idTarea }: Props) {
+  const { data: planilla, mutate, error } = useSWR<PlanillaResponse>(
+    ["/planillas", nroPlanilla, idTarea],
+    () => getPlanillaByNro(nroPlanilla, idTarea)
+  );
 
-  // Extendemos cada detalle con su nombre de elemento
-  const detallesConNombre: (DetalleResponse & { nombre_elemento: string })[] =
-    planilla.elemento.flatMap((elem) =>
-      elem.detalle.map((d) => ({
-        ...d,
-        nombre_elemento: elem.nombre_elemento,
-      }))
-    );
+  const handleSave = async () => {
+    await mutate();
+  };
+
+  if (error) return <div className="p-6 text-red-500">Error cargando planilla</div>;
+  if (!planilla) return <div className="p-6">Cargando planilla…</div>;
+
+  const detallesConNombre = planilla.elemento.flatMap((elem) =>
+    elem.detalle.map((d) => ({
+      ...d,
+      nombre_elemento: elem.nombre_elemento,
+      campos_modificados: d.campos_modificados,
+    }))
+  );
 
   return (
-    <div key={key}>
+    <>
       <AdminHeader planilla={planilla} />
-
       <AdminTablaRegistro
         planilla={planilla}
         detalles={detallesConNombre}
         idTarea={idTarea}
-        onSave={reload}
+        onSave={handleSave}
       />
-
       <AdminFooter planilla={planilla} />
-    </div>
+    </>
   );
 }

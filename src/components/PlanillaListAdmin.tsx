@@ -1,3 +1,5 @@
+// src/components/PlanillaListAdmin.tsx
+
 'use client';
 
 import { useRouter } from 'next/navigation';
@@ -13,21 +15,16 @@ export default function PlanillaListAdmin({ planillas, tipo }: Props) {
   const router = useRouter();
 
   return (
-    <div className="space-y-6">
+    // espacio vertical reducido
+    <div className="space-y-4">
       {planillas.map((p) => (
         <PlanillaCard
           key={p.nro_planilla}
           planilla={p}
           mostrarEliminar={tipo === 'completadas'}
-          onCorte={(nro) =>
-            router.push(`/admin/planillas/${tipo}/${nro}/1`)
-          }
-          onDoblado={(nro) =>
-            router.push(`/admin/planillas/${tipo}/${nro}/2`)
-         }
-          onEmpaque={(nro) =>
-            router.push(`/admin/planillas/${tipo}/${nro}/3`)
-          }
+          onCorte={(nro) => router.push(`/admin/planillas/${tipo}/${nro}/1`)}
+          onDoblado={(nro) => router.push(`/admin/planillas/${tipo}/${nro}/2`)}
+          onEmpaque={(nro) => router.push(`/admin/planillas/${tipo}/${nro}/3`)}
           modo="admin"
         />
       ))}

@@ -1,4 +1,3 @@
-// components/RegistroVista.tsx
 'use client';
 
 import React from 'react';
@@ -9,22 +8,27 @@ import PlanillaCardRegistro from './PlanillaCardRegistro';
 interface Props {
   planilla: PlanillaResponse;
   idTarea: number;
+  onRegistroGuardado: () => void;
 }
 
-export default function RegistroVista({ planilla, idTarea }: Props) {
+export default function RegistroVista({
+  planilla,
+  idTarea,
+  onRegistroGuardado,
+}: Props) {
   return (
     <>
       <PlanillaHeader planilla={planilla} />
-      {planilla.elemento.map((elem) =>
-        elem.detalle.map((det) => (
-          <PlanillaCardRegistro
-            key={`${elem.nombre_elemento}-${det.posicion}`}
-            elementoNombre={elem.nombre_elemento}
-            detalle={det}
-            idTarea={idTarea}
-          />
-        ))
-      )}
+      {planilla.elemento.map(elem => (
+        <PlanillaCardRegistro
+          key={elem.id_elemento}
+          elementoNombre={elem.nombre_elemento}
+          detalles={elem.detalle}
+          idTarea={idTarea}
+          onRegistroGuardado={onRegistroGuardado}
+        />
+      ))}
     </>
   );
 }
+

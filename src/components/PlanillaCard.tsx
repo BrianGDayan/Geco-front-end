@@ -1,5 +1,3 @@
-'use client';
-
 import { useState } from 'react';
 import { Trash2 } from 'lucide-react';
 import { DeletePlanilla, PlanillaSummary } from '@/lib/planillas';
@@ -30,11 +28,11 @@ export default function PlanillaCard({
   };
 
   const textoCorte =
-    modo === 'admin' ? 'Mostrar datos de corte' : 'Registrar datos de corte';
+    modo === 'admin' ? 'Visualizar datos de corte' : 'Registrar datos de corte';
   const textoDoblado =
-    modo === 'admin' ? 'Mostrar datos de doblado' : 'Registrar datos de doblado';
+    modo === 'admin' ? 'Visualizar datos de doblado' : 'Registrar datos de doblado';
   const textoEmpaque =
-    modo === 'admin' ? 'Mostrar datos de empaquetado' : 'Registrar datos de empaquetado';
+    modo === 'admin' ? 'Visualizar datos de empaquetado' : 'Registrar datos de empaquetado';
 
   if (!visible) return null;
 
@@ -69,7 +67,7 @@ export default function PlanillaCard({
           <span className="block font-semibold">Plano Nº:</span>
           {planilla.nro_plano}
         </div>
-        <div className="p-3 border-r">
+        <div className="p-3">
           <span className="block font-semibold">Fecha:</span>
           {planilla.fecha.toLocaleDateString('es-ES', {
             day: '2-digit',
@@ -79,22 +77,23 @@ export default function PlanillaCard({
         </div>
       </div>
 
-      <div className="flex items-center justify-between gap-4 bg-gray-100 px-4 py-4 flex-wrap">
+      {/* Contenedor de botones comprimido y botones flexibles */}
+      <div className="flex flex-wrap gap-6 bg-gray-100 px-4 py-4">
         <button
-          onClick={() => onCorte && onCorte(planilla.nro_planilla)}
-          className="px-4 py-2 bg-primary text-white rounded hover:bg-primary-dark"
+          onClick={() => onCorte?.(planilla.nro_planilla)}
+          className="flex-1 px-4 py-2 bg-primary text-white rounded hover:bg-primary-dark transition text-center"
         >
           {textoCorte}
         </button>
         <button
-          onClick={() => onDoblado && onDoblado(planilla.nro_planilla)}
-          className="px-4 py-2 bg-[#1E7F66] text-white rounded hover:bg-green-700"
+          onClick={() => onDoblado?.(planilla.nro_planilla)}
+          className="flex-1 px-4 py-2 bg-[#1E7F66] text-white rounded hover:bg-green-700 transition text-center"
         >
           {textoDoblado}
         </button>
         <button
-          onClick={() => onEmpaque && onEmpaque(planilla.nro_planilla)}
-          className="px-4 py-2 bg-[#6A1B4D] text-white rounded hover:bg-pink-800"
+          onClick={() => onEmpaque?.(planilla.nro_planilla)}
+          className="flex-1 px-4 py-2 bg-[#6A1B4D] text-white rounded hover:bg-pink-800 transition text-center"
         >
           {textoEmpaque}
         </button>

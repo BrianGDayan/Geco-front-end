@@ -1,3 +1,5 @@
+// src/components/AdminFooter.tsx
+
 import React from 'react';
 import { PlanillaResponse } from '@/lib/planillas';
 
@@ -7,74 +9,64 @@ interface Props {
 
 export default function AdminFooter({ planilla }: Props) {
   const { peso_total, pesos_diametro } = planilla;
+  const total = typeof peso_total === 'number' ? peso_total.toFixed(3) : '—';
+
+  // placeholder de nombres; luego los sustituirás dinámicamente
+  const nombre1 = 'Nombre Operario 1';
+  const nombre2 = 'Nombre Operario 2';
 
   return (
-    <>
-      {/* Peso total de la planilla */}
-      <div className="bg-white rounded-lg shadow p-6 mb-6">
-        <h2 className="text-lg font-semibold text-primary-dark mb-4">Peso Total (Tn)</h2>
-        <div className="text-2xl font-bold text-gray-text text-center mb-2">
-          {peso_total.toFixed(3)}
-        </div>
-        <div className="grid grid-cols-4 gap-4 text-center">
-          {pesos_diametro.map(({ diametro, peso }) => (
-            <div key={diametro} className="space-y-1">
-              <div className="text-sm font-medium text-gray-text">Ø {diametro}</div>
-              <div className="text-xl font-semibold text-gray-text">{peso.toFixed(3)}</div>
-            </div>
-          ))}
+    <div className="space-y-6">
+      {/* Peso Total */}
+      <div className="rounded-lg shadow p-6 bg-white">
+        <h2 className="text-xl font-bold text-[#226FB7] mb-2">Peso Total (Tn)</h2>
+        <div className="text-4xl font-extrabold text-gray-800 text-center">
+          {total}
         </div>
       </div>
 
-      {/* Rendimientos globales trabajador */}
-      <div className="bg-white rounded-lg shadow p-6 mb-6">
-        <h2 className="text-lg font-semibold text-primary-dark mb-4">Rendimiento Global (Trabajador)</h2>
-        <div className="grid grid-cols-3 gap-4 text-center">
-          <div>
-            <div className="font-medium text-gray-text">Corte</div>
-            <div className="text-xl font-semibold text-gray-text">
-              {planilla.rendimiento_global_corte_trabajador.toFixed(3)}
-            </div>
+      {/* Medidas de Rendimiento Oficial */}
+      <div className="rounded-lg shadow p-6 bg-white">
+        <h2 className="text-lg font-semibold text-gray-700 mb-4">
+          Medidas de rendimiento del Cortador 1 ({nombre1})
+        </h2>
+        <div className="grid grid-cols-3 gap-4">
+          {/* Estos tres bloques quedan vacíos por ahora */}
+          <div className="p-4 rounded-lg text-center" style={{ backgroundColor: 'rgba(34,111,183,0.74)' }}>
+            <div className="font-medium text-white">Rendimiento Tipo 1</div>
+            <div className="text-2xl font-bold text-white">—</div>
           </div>
-          <div>
-            <div className="font-medium text-gray-text">Doblado</div>
-            <div className="text-xl font-semibold text-gray-text">
-              {planilla.rendimiento_global_doblado_trabajador.toFixed(3)}
-            </div>
+          <div className="p-4 rounded-lg text-center" style={{ backgroundColor: 'rgba(34,111,183,0.74)' }}>
+            <div className="font-medium text-white">Rendimiento Tipo 2</div>
+            <div className="text-2xl font-bold text-white">—</div>
           </div>
-          <div>
-            <div className="font-medium text-gray-text">Empaquetado</div>
-            <div className="text-xl font-semibold text-gray-text">
-              {planilla.rendimiento_global_empaquetado_trabajador.toFixed(3)}
-            </div>
+          <div className="p-4 rounded-lg text-center" style={{ backgroundColor: 'rgba(34,111,183,0.74)' }}>
+            <div className="font-medium text-white">Rendimiento Tipo 3</div>
+            <div className="text-2xl font-bold text-white">—</div>
           </div>
         </div>
       </div>
 
-      {/* Rendimientos globales ayudante */}
-      <div className="bg-white rounded-lg shadow p-6 mb-6">
-        <h2 className="text-lg font-semibold text-primary-dark mb-4">Rendimiento Global (Ayudante)</h2>
-        <div className="grid grid-cols-3 gap-4 text-center">
-          <div>
-            <div className="font-medium text-gray-text">Corte</div>
-            <div className="text-xl font-semibold text-gray-text">
-              {planilla.rendimiento_global_corte_ayudante.toFixed(3)}
-            </div>
+      {/* Medidas de Rendimiento Ayudante */}
+      <div className="rounded-lg shadow p-6 bg-white">
+        <h2 className="text-lg font-semibold text-gray-700 mb-4">
+          Medidas de rendimiento del Cortador 2 ({nombre2})
+        </h2>
+        <div className="grid grid-cols-3 gap-4">
+          <div className="p-4 rounded-lg text-center" style={{ backgroundColor: 'rgba(34,183,66,0.74)' }}>
+            <div className="font-medium text-white">Rendimiento Tipo 1</div>
+            <div className="text-2xl font-bold text-white">—</div>
           </div>
-          <div>
-            <div className="font-medium text-gray-text">Doblado</div>
-            <div className="text-xl font-semibold text-gray-text">
-              {planilla.rendimiento_global_doblado_ayudante.toFixed(3)}
-            </div>
+          <div className="p-4 rounded-lg text-center" style={{ backgroundColor: 'rgba(34,183,66,0.74)' }}>
+            <div className="font-medium text-white">Rendimiento Tipo 2</div>
+            <div className="text-2xl font-bold text-white">—</div>
           </div>
-          <div>
-            <div className="font-medium text-gray-text">Empaquetado</div>
-            <div className="text-xl font-semibold text-gray-text">
-              {planilla.rendimiento_global_empaquetado_ayudante.toFixed(3)}
-            </div>
+          <div className="p-4 rounded-lg text-center" style={{ backgroundColor: 'rgba(34,183,66,0.74)' }}>
+            <div className="font-medium text-white">Rendimiento Tipo 3</div>
+            <div className="text-2xl font-bold text-white">—</div>
           </div>
         </div>
       </div>
-    </>
-  );
+    </div>
+);
 }

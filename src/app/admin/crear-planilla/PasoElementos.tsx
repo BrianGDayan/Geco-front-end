@@ -3,6 +3,7 @@
 import { ElementoDto, DetalleDto } from "@/lib/planillas";
 import { useEffect, useState } from "react";
 import { PlusCircle, Trash2, ChevronDown, ChevronUp } from "lucide-react";
+import { uploadEspecificacion } from "@/lib/planillas"; // tu helper
 
 interface PasoElementosProps {
   item: string;
@@ -24,45 +25,33 @@ export default function PasoElementos({
 
   useEffect(() => {
     if (elementos.length === 0) {
-      setElementos([{ nombre: '', detalle: [{} as DetalleDto] }]);
+      setElementos([{ nombre: "", detalle: [{} as DetalleDto] }]);
       setExpanded({ 0: true });
     }
   }, []);
 
-
-  const esCampoInvalido = (clave: string) => errores[clave];
+  const esCampoInvalido = (clave: string) => !!errores[clave];
 
   const agregarElemento = () => {
     setElementos([
       ...elementos,
-      { nombre: '', detalle: [{} as any] },
+      { nombre: "", detalle: [{} as DetalleDto] },
     ]);
-    setExpanded((prev) => ({ ...prev, [elementos.length]: true }));
+    setExpanded((p) => ({ ...p, [elementos.length]: true }));
   };
 
   const eliminarElemento = (i: number) => {
     const arr = [...elementos];
     arr.splice(i, 1);
     setElementos(arr);
-    const exp = { ...expanded };
-    delete exp[i];
-    Object.keys(exp).forEach((k) => {
-      const idx = Number(k);
-      if (idx > i) {
-        exp[idx - 1] = exp[idx];
-        delete exp[idx];
-      }
-    });
-    setExpanded(exp);
   };
 
-  const toggleExpand = (id: number) => {
-    setExpanded((prev) => ({ ...prev, [id]: !prev[id] }));
-  };
+  const toggleExpand = (key: number) =>
+    setExpanded((p) => ({ ...p, [key]: !p[key] }));
 
   const agregarDetalle = (i: number) => {
     const arr = [...elementos];
-    arr[i].detalle.push({} as any);
+    arr[i].detalle.push({} as DetalleDto);
     setElementos(arr);
   };
 
@@ -73,33 +62,53 @@ export default function PasoElementos({
   };
 
   const validarCampos = () => {
-    const nuevosErrores: Record<string, boolean> = {};
+    const nuevos: Record<string, boolean> = {};
     elementos.forEach((el, i) => {
-      if (!el.nombre.trim()) nuevosErrores[`el-${i}-nombre`] = true;
+      if (!el.nombre.trim()) nuevos[`el-${i}-nombre`] = true;
       el.detalle.forEach((det, j) => {
+        if (!det.especificacion) nuevos[`det-${i}-${j}-especificacion`] = true;
         [
-          'especificacion',
-          'posicion',
-          'tipo',
-          'medidaDiametro',
-          'longitudCorte',
-          'cantidadUnitaria',
-          'nroElementos',
-          'nroIguales'
-        ].forEach((campo) => {
-          if (det[campo as keyof DetalleDto] === undefined || det[campo as keyof DetalleDto] === null || det[campo as keyof DetalleDto] === '') {
-            nuevosErrores[`det-${i}-${j}-${campo}`] = true;
+          "posicion",
+          "tipo",
+          "medidaDiametro",
+          "longitudCorte",
+          "cantidadUnitaria",
+          "nroElementos",
+          "nroIguales",
+        ].forEach((f) => {
+          if (
+            det[f as keyof DetalleDto] == null ||
+            det[f as keyof DetalleDto] === ""
+          ) {
+            nuevos[`det-${i}-${j}-${f}`] = true;
           }
         });
       });
     });
-    setErrores(nuevosErrores);
-    return Object.keys(nuevosErrores).length === 0;
+    setErrores(nuevos);
+    return Object.keys(nuevos).length === 0;
+  };
+
+  const handleFileChange = async (
+    file: File,
+    i: number,
+    j: number
+  ) => {
+    try {
+      const { url } = await uploadEspecificacion(file);
+      const arr = [...elementos];
+      arr[i].detalle[j].especificacion = url;
+      setElementos(arr);
+    } catch (e) {
+      console.error("Error subiendo imagen", e);
+    }
   };
 
   return (
     <div className="space-y-6">
-      <h2 className="text-2xl font-bold text-center">Ingrese los elementos de la planilla</h2>
+      <h2 className="text-2xl font-bold text-center">
+        Ingrese los elementos de la planilla
+      </h2>
       <input
         type="text"
         placeholder={item}
@@ -109,26 +118,32 @@ export default function PasoElementos({
 
       <div className="space-y-4">
         {elementos.map((el, i) => (
-          <div key={i} className="border rounded-lg bg-white shadow p-4 space-y-3 min-h-[160px]">
-            {/* Header del elemento */}
+          <div
+            key={i}
+            className="border rounded-lg bg-white shadow p-4 space-y-3"
+          >
             <div className="flex items-center gap-2">
               <input
                 type="text"
                 placeholder={`Elemento ${i + 1}`}
-                className={`flex-grow border rounded px-2 py-1 ${esCampoInvalido(`el-${i}-nombre`) ? "border-red-500" : "border-gray-border"}`}
                 value={el.nombre}
                 onChange={(e) => {
                   const arr = [...elementos];
                   arr[i].nombre = e.target.value;
                   setElementos(arr);
                 }}
-                maxLength={50}
-                required
+                className={`flex-grow border rounded px-2 py-1 ${
+                  esCampoInvalido(`el-${i}-nombre`)
+                    ? "border-red-500"
+                    : "border-gray-border"
+                }`}
               />
               {i === 0 ? (
-                <button onClick={agregarElemento} className="text-green-600">
-                  <PlusCircle size={20} />
-                </button>
+                <PlusCircle
+                  size={20}
+                  className="text-green-600 cursor-pointer"
+                  onClick={agregarElemento}
+                />
               ) : (
                 <Trash2
                   size={20}
@@ -138,68 +153,150 @@ export default function PasoElementos({
               )}
             </div>
 
-            {/* Detalles */}
-            {el.detalle.map((_, j) => {
-              const isOpen = expanded[i * 100 + j];
-
-              const clase = (campo: string) =>
-                `border rounded p-1 w-full ${esCampoInvalido(`det-${i}-${j}-${campo}`) ? 'border-red-500' : 'border-gray-border'}`;
-
+            {el.detalle.map((det, j) => {
+              const key = i * 100 + j;
+              const isOpen = expanded[key] || false;
               return (
-                <div key={j} className="space-y-2 border-t pt-2">
-                  {/* Cabecera del detalle */}
-                  <div className="flex items-center gap-2">
+                <div key={j} className="border-t pt-3 space-y-3">
+                  {/* LINEA DETALLE + UPLOAD */}
+                  <div className="flex items-center gap-4">
+                    {/* Input texto */}
                     <input
                       type="text"
                       placeholder={`Detalle ${j + 1}`}
-                      className={`flex-grow ${clase("especificacion")}`}
-                      value={el.detalle[j]?.especificacion ?? ""}
+                      value={det.especificacion || ""}
                       onChange={(e) => {
                         const arr = [...elementos];
-                        arr[i].detalle[j] = {
-                          ...arr[i].detalle[j],
-                          especificacion: e.target.value,
-                        };
+                        arr[i].detalle[j].especificacion = e.target.value;
                         setElementos(arr);
                       }}
-                      maxLength={50}
-                      required
+                      className={`flex-1 border rounded px-2 py-1 ${
+                        esCampoInvalido(`det-${i}-${j}-especificacion`)
+                          ? "border-red-500"
+                          : "border-gray-border"
+                      }`}
                     />
-                    <button onClick={() => toggleExpand(i * 100 + j)} className="text-blue-600">
-                      {isOpen ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
-                    </button>
-                    {j === 0 ? (
-                      <button onClick={() => agregarDetalle(i)} className="text-green-600">
-                        <PlusCircle size={18} />
-                      </button>
-                    ) : (
-                      <Trash2
-                        size={18}
-                        className="text-red-600 cursor-pointer"
-                        onClick={() => eliminarDetalle(i, j)}
+
+                    {/* Botón subir imagen */}
+                    <label className="cursor-pointer text-blue-600 hover:underline">
+                      📁
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) handleFileChange(file, i, j);
+                        }}
                       />
-                    )}
+                    </label>
+
+                    {/* Preview miniatura si ya existe URL */}
+                    {det.especificacion &&
+                      /\.(jpe?g|png|gif|webp)$/i.test(det.especificacion) && (
+                        <img
+                          src={det.especificacion}
+                          alt=""
+                          className="h-12 w-12 object-cover rounded"
+                        />
+                      )}
+
+                    {/* Expand / Agregar / Eliminar detalle */}
+                    <div className="flex items-center gap-2">
+                      <button onClick={() => toggleExpand(key)}>
+                        {isOpen ? <ChevronUp /> : <ChevronDown />}
+                      </button>
+                      {j === 0 ? (
+                        <PlusCircle
+                          size={18}
+                          className="text-green-600 cursor-pointer"
+                          onClick={() => agregarDetalle(i)}
+                        />
+                      ) : (
+                        <Trash2
+                          size={18}
+                          className="text-red-600 cursor-pointer"
+                          onClick={() => eliminarDetalle(i, j)}
+                        />
+                      )}
+                    </div>
                   </div>
 
-                  {/* Contenido expandible */}
+                  {/* Campos expandibles */}
                   <div
-                    className={`transition-all duration-300 overflow-hidden`}
-                    style={{ maxHeight: isOpen ? '500px' : '0px', opacity: isOpen ? 1 : 0 }}
+                    className="transition-all overflow-hidden"
+                    style={{
+                      maxHeight: isOpen ? "500px" : "0px",
+                      opacity: isOpen ? 1 : 0,
+                    }}
                   >
-                    <div className="space-y-2 mt-2">
-                      <div className="flex gap-2">
-                        <input type="number" className={clase("posicion") } placeholder="Posición" value={el.detalle[j]?.posicion ?? ''} onChange={e => { const arr = [...elementos]; arr[i].detalle[j] = { ...arr[i].detalle[j], posicion: +e.target.value }; setElementos(arr); }} required />
-                        <input type="number" className={clase("tipo") } placeholder="Tipo" value={el.detalle[j]?.tipo ?? ''} onChange={e => { const arr = [...elementos]; arr[i].detalle[j] = { ...arr[i].detalle[j], tipo: +e.target.value }; setElementos(arr); }} required />
-                        <input type="number" className={clase("medidaDiametro") } placeholder="Diámetro (mm)" value={el.detalle[j]?.medidaDiametro ?? ''} onChange={e => { const arr = [...elementos]; arr[i].detalle[j] = { ...arr[i].detalle[j], medidaDiametro: +e.target.value }; setElementos(arr); }} required />
-                      </div>
-                      <div className="flex gap-2">
-                        <input type="number" className={clase("longitudCorte") } placeholder="Longitud de corte (m)" value={el.detalle[j]?.longitudCorte ?? ''} onChange={e => { const arr = [...elementos]; arr[i].detalle[j] = { ...arr[i].detalle[j], longitudCorte: +e.target.value }; setElementos(arr); }} required />
-                        <input type="number" className={clase("cantidadUnitaria") } placeholder="Cantidad unitaria" value={el.detalle[j]?.cantidadUnitaria ?? ''} onChange={e => { const arr = [...elementos]; arr[i].detalle[j] = { ...arr[i].detalle[j], cantidadUnitaria: +e.target.value }; setElementos(arr); }} required />
-                        <input type="number" className={clase("nroElementos") } placeholder="N° de elementos" value={el.detalle[j]?.nroElementos ?? ''} onChange={e => { const arr = [...elementos]; arr[i].detalle[j] = { ...arr[i].detalle[j], nroElementos: +e.target.value }; setElementos(arr); }} required />
-                      </div>
-                      <div>
-                        <input type="number" className={clase("nroIguales") } placeholder="N° de iguales" value={el.detalle[j]?.nroIguales ?? ''} onChange={e => { const arr = [...elementos]; arr[i].detalle[j] = { ...arr[i].detalle[j], nroIguales: +e.target.value }; setElementos(arr); }} required />
-                      </div>
+                    <div className="grid grid-cols-3 gap-2 mt-3">
+                      <input
+                        type="text"
+                        placeholder="Posición"
+                        value={det.posicion ?? ""}
+                        onChange={(e) => {
+                          const arr = [...elementos];
+                          arr[i].detalle[j].posicion = e.target.value;
+                          setElementos(arr);
+                        }}
+                        className="border rounded px-2 py-1"
+                      />
+                      <input
+                        type="number"
+                        placeholder="Tipo"
+                        value={det.tipo ?? ""}
+                        onChange={(e) => {
+                          const arr = [...elementos];
+                          arr[i].detalle[j].tipo = +e.target.value;
+                          setElementos(arr);
+                        }}
+                        className="border rounded px-2 py-1"
+                      />
+                      <input
+                        type="number"
+                        placeholder="Ø (mm)"
+                        value={det.medidaDiametro ?? ""}
+                        onChange={(e) => {
+                          const arr = [...elementos];
+                          arr[i].detalle[j].medidaDiametro = +e.target.value;
+                          setElementos(arr);
+                        }}
+                        className="border rounded px-2 py-1"
+                      />
+                      <input
+                        type="number"
+                        placeholder="Long. Corte (m)"
+                        value={det.longitudCorte ?? ""}
+                        onChange={(e) => {
+                          const arr = [...elementos];
+                          arr[i].detalle[j].longitudCorte = +e.target.value;
+                          setElementos(arr);
+                        }}
+                        className="border rounded px-2 py-1"
+                      />
+                      <input
+                        type="number"
+                        placeholder="Cant. Unitaria"
+                        value={det.cantidadUnitaria ?? ""}
+                        onChange={(e) => {
+                          const arr = [...elementos];
+                          arr[i].detalle[j].cantidadUnitaria = +e.target.value;
+                          setElementos(arr);
+                        }}
+                        className="border rounded px-2 py-1"
+                      />
+                      <input
+                        type="number"
+                        placeholder="N° Iguales"
+                        value={det.nroIguales ?? ""}
+                        onChange={(e) => {
+                          const arr = [...elementos];
+                          arr[i].detalle[j].nroIguales = +e.target.value;
+                          setElementos(arr);
+                        }}
+                        className="border rounded px-2 py-1"
+                      />
                     </div>
                   </div>
                 </div>
@@ -209,9 +306,12 @@ export default function PasoElementos({
         ))}
       </div>
 
-      {/* Navegación */}
+      {/* Botones de navegación */}
       <div className="flex justify-between">
-        <button onClick={onBack} className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400">
+        <button
+          onClick={onBack}
+          className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400"
+        >
           Volver atrás
         </button>
         <button

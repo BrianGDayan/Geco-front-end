@@ -2,7 +2,7 @@ import { fetcher } from "./api";
 
 export interface DetalleDto {
   especificacion: string;
-  posicion: number;
+  posicion: string;
   tipo: number;
   medidaDiametro: number;
   longitudCorte: number;
@@ -13,7 +13,7 @@ export interface DetalleDto {
 
 export interface UpdateDetalleDto {
   especificacion?: string;
-  posicion?: number;
+  posicion?: string;
   tipo?: number;
   medidaDiametro?: number;
   longitudCorte?: number;
@@ -59,13 +59,19 @@ export interface RegistroResponse {
 
 export interface DetalleTareaResponse {
   id_detalle_tarea: number;
-  tarea: { nombre_tarea: string };
+  cantidad_acumulada: number;
+  completado: boolean;
+  tarea: {
+    nombre_tarea: string;
+  };
   registro: RegistroResponse[];
 }
 
+
 export interface DetalleResponse {
+  id_detalle: number;
   especificacion: string;
-  posicion: number;
+  posicion: string;
   tipo: string;
   medida_diametro: number;
   longitud_corte: number;
@@ -73,10 +79,13 @@ export interface DetalleResponse {
   nro_elementos: number;
   nro_iguales: number;
   cantidad_total: number;
+  progreso: number;
+  campos_modificados: string[];
   detalle_tarea: DetalleTareaResponse[];
 }
 
 export interface ElementoResponse {
+  id_elemento: number;
   nombre_elemento: string;
   detalle: DetalleResponse[];
 }
@@ -104,6 +113,11 @@ export interface PlanillaResponse {
   elemento: ElementoResponse[];
 }
 
+export interface CloudinaryUploadResult {
+  publicId: string;
+  url: string;
+}
+
 export interface PlanillaSummary {
   nro_planilla: string;
   obra: string;
@@ -121,6 +135,11 @@ export interface RendimientosPromedio {
   rendimiento_global_corte_ayudante: number | null;
   rendimiento_global_doblado_ayudante: number | null;
   rendimiento_global_empaquetado_ayudante: number | null;
+}
+
+export interface BatchUpdate {
+  idDetalle: number;
+  dto: UpdateDetalleDto;
 }
 
 export async function getPlanillaByNro(nroPlanilla: string, idTarea: number): Promise<PlanillaResponse> {
@@ -155,11 +174,30 @@ export async function CreatePlanilla(planillaDto: PlanillaDto): Promise<Planilla
   return res;
 }
 
+
+export async function uploadEspecificacion(file: File): Promise<CloudinaryUploadResult> {
+  const form = new FormData();
+  form.append("file", file);
+  return fetcher<CloudinaryUploadResult>("/cloudinary/upload", {
+    method: "POST",
+    body: form,
+  });
+}
+
 export async function UpdateDetalle(idDetalle: number, updateDetalleDto:UpdateDetalleDto ): Promise<PlanillaResponse> {
   const res = await fetcher<PlanillaResponse>(`/planillas/detalles/${idDetalle}`, {
     method: "PATCH",
     body: JSON.stringify(updateDetalleDto),
   });
+  return res;
+}
+
+export async function updateDetallesBatch(nroPlanilla: string, updates: BatchUpdate[]): Promise<PlanillaResponse> {
+  const res = await fetcher<PlanillaResponse>(`/planillas/${nroPlanilla}/detalles/batch`, {
+      method: 'PATCH',
+      body: JSON.stringify({ updates }),
+    }
+  );
   return res;
 }
 

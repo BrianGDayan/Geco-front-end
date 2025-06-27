@@ -13,8 +13,8 @@ interface Props {
 }
 
 export default function AdminVerDatosPage({ params }: Props) {
-  // Desenrollamos params
-  const { nroPlanilla, idTarea } = use(params);
+  const { nroPlanilla, idTarea } = use(params); // <- aquí usamos use()
+
   const router = useRouter();
   const [planilla, setPlanilla] = useState<PlanillaResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -47,8 +47,9 @@ export default function AdminVerDatosPage({ params }: Props) {
   return (
     <div className="min-h-screen bg-gray-bg">
       <div className="max-w-7xl mx-auto py-6 px-4">
-        <AdminVista planilla={planilla!} idTarea={Number(idTarea)} />
+        <AdminVista nroPlanilla={nroPlanilla} idTarea={Number(idTarea)} />
       </div>
     </div>
   );
 }
+

@@ -1,4 +1,3 @@
-// components/PlanillaHeader.tsx
 import React from 'react';
 import { PlanillaResponse } from '@/lib/planillas';
 
@@ -7,15 +6,8 @@ interface Props {
 }
 
 export default function PlanillaHeader({ planilla }: Props) {
-  // Ejemplo simple de cálculo de progreso:
-  const detallesPlanilla = planilla.elemento.flatMap((e) => e.detalle);
-  const progresoTotal =
-    detallesPlanilla.length > 0
-      ? Math.floor(
-          detallesPlanilla.reduce((acc, d) => acc + d.progreso, 0) /
-            detallesPlanilla.length
-        )
-      : 0;
+  // Usamos el progreso calculado en backend
+  const progresoTotal = planilla.progreso ?? 0;
 
   return (
     <div className="bg-white rounded-lg shadow p-6 mb-6">
@@ -24,7 +16,9 @@ export default function PlanillaHeader({ planilla }: Props) {
       </h2>
       <div className="grid grid-cols-2 gap-4 mb-4">
         <div>
-          <label className="block text-sm font-medium text-gray-text">Nº planilla</label>
+          <label className="block text-sm font-medium text-gray-text">
+            Nº planilla
+          </label>
           <input
             readOnly
             value={planilla.nro_planilla}
