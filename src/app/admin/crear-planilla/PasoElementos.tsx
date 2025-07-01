@@ -3,7 +3,7 @@
 import { ElementoDto, DetalleDto } from "@/lib/planillas";
 import { useEffect, useState } from "react";
 import { PlusCircle, Trash2, ChevronDown, ChevronUp } from "lucide-react";
-import { uploadEspecificacion } from "@/lib/planillas"; // tu helper
+import { uploadEspecificacion } from "@/lib/planillas";
 
 interface PasoElementosProps {
   item: string;
@@ -12,6 +12,18 @@ interface PasoElementosProps {
   onNext: () => void;
   onBack: () => void;
 }
+
+// 👉 Detalle por defecto, numéricos undefined para mostrar placeholder
+const DEFAULT_DETALLE: DetalleDto = {
+  especificacion: '',
+  posicion: '',
+  tipo: undefined,
+  medidaDiametro: undefined,
+  longitudCorte: undefined,
+  cantidadUnitaria: undefined,
+  nroElementos: undefined,
+  nroIguales: undefined,
+};
 
 export default function PasoElementos({
   item,
@@ -25,7 +37,7 @@ export default function PasoElementos({
 
   useEffect(() => {
     if (elementos.length === 0) {
-      setElementos([{ nombre: "", detalle: [{} as DetalleDto] }]);
+      setElementos([{ nombre: "", detalle: [{ ...DEFAULT_DETALLE }] }]);
       setExpanded({ 0: true });
     }
   }, []);
@@ -35,9 +47,9 @@ export default function PasoElementos({
   const agregarElemento = () => {
     setElementos([
       ...elementos,
-      { nombre: "", detalle: [{} as DetalleDto] },
+      { nombre: "", detalle: [{ ...DEFAULT_DETALLE }] },
     ]);
-    setExpanded((p) => ({ ...p, [elementos.length]: true }));
+    setExpanded((prev) => ({ ...prev, [elementos.length]: true }));
   };
 
   const eliminarElemento = (i: number) => {
@@ -47,11 +59,11 @@ export default function PasoElementos({
   };
 
   const toggleExpand = (key: number) =>
-    setExpanded((p) => ({ ...p, [key]: !p[key] }));
+    setExpanded((prev) => ({ ...prev, [key]: !prev[key] }));
 
   const agregarDetalle = (i: number) => {
     const arr = [...elementos];
-    arr[i].detalle.push({} as DetalleDto);
+    arr[i].detalle.push({ ...DEFAULT_DETALLE });
     setElementos(arr);
   };
 
@@ -65,44 +77,34 @@ export default function PasoElementos({
     const nuevos: Record<string, boolean> = {};
     elementos.forEach((el, i) => {
       if (!el.nombre.trim()) nuevos[`el-${i}-nombre`] = true;
-      el.detalle.forEach((det, j) => {
-        if (!det.especificacion) nuevos[`det-${i}-${j}-especificacion`] = true;
-        [
-          "posicion",
-          "tipo",
-          "medidaDiametro",
-          "longitudCorte",
-          "cantidadUnitaria",
-          "nroElementos",
-          "nroIguales",
-        ].forEach((f) => {
-          if (
-            det[f as keyof DetalleDto] == null ||
-            det[f as keyof DetalleDto] === ""
-          ) {
-            nuevos[`det-${i}-${j}-${f}`] = true;
-          }
-        });
-      });
     });
     setErrores(nuevos);
     return Object.keys(nuevos).length === 0;
   };
 
-  const handleFileChange = async (
-    file: File,
-    i: number,
-    j: number
-  ) => {
-    try {
-      const { url } = await uploadEspecificacion(file);
-      const arr = [...elementos];
-      arr[i].detalle[j].especificacion = url;
-      setElementos(arr);
-    } catch (e) {
-      console.error("Error subiendo imagen", e);
-    }
-  };
+const handleFileChange = async (
+  file: File,
+  i: number,
+  j: number
+) => {
+  try {
+    const { url } = await uploadEspecificacion(file);
+    // Clon profundo basado en `elementos`
+    const updated = elementos.map((el, ei) =>
+      ei !== i
+        ? el
+        : {
+            ...el,
+            detalle: el.detalle.map((det, dj) =>
+              dj === j ? { ...det, especificacion: url } : det
+            ),
+          }
+    );
+    setElementos(updated);
+  } catch (e) {
+    console.error("Error subiendo imagen", e);
+  }
+};
 
   return (
     <div className="space-y-6">
@@ -157,27 +159,21 @@ export default function PasoElementos({
               const key = i * 100 + j;
               const isOpen = expanded[key] || false;
               return (
-                <div key={j} className="border-t pt-3 space-y-3">
-                  {/* LINEA DETALLE + UPLOAD */}
+                <div key={key} className="border-t pt-3 space-y-3">
                   <div className="flex items-center gap-4">
-                    {/* Input texto */}
-                    <input
-                      type="text"
-                      placeholder={`Detalle ${j + 1}`}
-                      value={det.especificacion || ""}
-                      onChange={(e) => {
-                        const arr = [...elementos];
-                        arr[i].detalle[j].especificacion = e.target.value;
-                        setElementos(arr);
-                      }}
-                      className={`flex-1 border rounded px-2 py-1 ${
-                        esCampoInvalido(`det-${i}-${j}-especificacion`)
-                          ? "border-red-500"
-                          : "border-gray-border"
-                      }`}
-                    />
-
-                    {/* Botón subir imagen */}
+                    <p title={det.especificacion || `Detalle ${j + 1}`} className="flex-1 border rounded px-2 py-1 bg-gray-100 text-gray-700 truncate overflow-hidden whitespace-nowrap">
+                     {det.especificacion ? det.especificacion : `Detalle ${j + 1}`}
+                    </p>
+                    {det.especificacion && (
+                      <button
+                        onClick={() => {
+                          navigator.clipboard.writeText(det.especificacion);
+                        }}
+                        className="text-sm px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
+                      >
+                        Copiar
+                      </button>
+                    )}
                     <label className="cursor-pointer text-blue-600 hover:underline">
                       📁
                       <input
@@ -190,51 +186,41 @@ export default function PasoElementos({
                         }}
                       />
                     </label>
-
-                    {/* Preview miniatura si ya existe URL */}
                     {det.especificacion &&
                       /\.(jpe?g|png|gif|webp)$/i.test(det.especificacion) && (
                         <img
                           src={det.especificacion}
-                          alt=""
+                          alt="Foto detalle"
                           className="h-12 w-12 object-cover rounded"
                         />
                       )}
-
-                    {/* Expand / Agregar / Eliminar detalle */}
-                    <div className="flex items-center gap-2">
-                      <button onClick={() => toggleExpand(key)}>
-                        {isOpen ? <ChevronUp /> : <ChevronDown />}
-                      </button>
-                      {j === 0 ? (
-                        <PlusCircle
-                          size={18}
-                          className="text-green-600 cursor-pointer"
-                          onClick={() => agregarDetalle(i)}
-                        />
-                      ) : (
-                        <Trash2
-                          size={18}
-                          className="text-red-600 cursor-pointer"
-                          onClick={() => eliminarDetalle(i, j)}
-                        />
-                      )}
-                    </div>
+                    <button onClick={() => toggleExpand(key)}>
+                      {isOpen ? <ChevronUp /> : <ChevronDown />}
+                    </button>
+                    {j === 0 ? (
+                      <PlusCircle
+                        size={18}
+                        className="text-green-600 cursor-pointer"
+                        onClick={() => agregarDetalle(i)}
+                      />
+                    ) : (
+                      <Trash2
+                        size={18}
+                        className="text-red-600 cursor-pointer"
+                        onClick={() => eliminarDetalle(i, j)}
+                      />
+                    )}
                   </div>
 
-                  {/* Campos expandibles */}
                   <div
                     className="transition-all overflow-hidden"
-                    style={{
-                      maxHeight: isOpen ? "500px" : "0px",
-                      opacity: isOpen ? 1 : 0,
-                    }}
+                    style={{ maxHeight: isOpen ? "500px" : "0px", opacity: isOpen ? 1 : 0 }}
                   >
                     <div className="grid grid-cols-3 gap-2 mt-3">
                       <input
                         type="text"
                         placeholder="Posición"
-                        value={det.posicion ?? ""}
+                        value={det.posicion ?? ''}
                         onChange={(e) => {
                           const arr = [...elementos];
                           arr[i].detalle[j].posicion = e.target.value;
@@ -245,7 +231,7 @@ export default function PasoElementos({
                       <input
                         type="number"
                         placeholder="Tipo"
-                        value={det.tipo ?? ""}
+                        value={det.tipo ?? ''}
                         onChange={(e) => {
                           const arr = [...elementos];
                           arr[i].detalle[j].tipo = +e.target.value;
@@ -256,7 +242,7 @@ export default function PasoElementos({
                       <input
                         type="number"
                         placeholder="Ø (mm)"
-                        value={det.medidaDiametro ?? ""}
+                        value={det.medidaDiametro ?? ''}
                         onChange={(e) => {
                           const arr = [...elementos];
                           arr[i].detalle[j].medidaDiametro = +e.target.value;
@@ -267,7 +253,7 @@ export default function PasoElementos({
                       <input
                         type="number"
                         placeholder="Long. Corte (m)"
-                        value={det.longitudCorte ?? ""}
+                        value={det.longitudCorte ?? ''}
                         onChange={(e) => {
                           const arr = [...elementos];
                           arr[i].detalle[j].longitudCorte = +e.target.value;
@@ -278,7 +264,7 @@ export default function PasoElementos({
                       <input
                         type="number"
                         placeholder="Cant. Unitaria"
-                        value={det.cantidadUnitaria ?? ""}
+                        value={det.cantidadUnitaria ?? ''}
                         onChange={(e) => {
                           const arr = [...elementos];
                           arr[i].detalle[j].cantidadUnitaria = +e.target.value;
@@ -288,8 +274,19 @@ export default function PasoElementos({
                       />
                       <input
                         type="number"
+                        placeholder="N° Elementos"
+                        value={det.nroElementos ?? ''}
+                        onChange={(e) => {
+                          const arr = [...elementos];
+                          arr[i].detalle[j].nroElementos = +e.target.value;
+                          setElementos(arr);
+                        }}
+                        className="border rounded px-2 py-1"
+                      />
+                      <input
+                        type="number"
                         placeholder="N° Iguales"
-                        value={det.nroIguales ?? ""}
+                        value={det.nroIguales ?? ''}
                         onChange={(e) => {
                           const arr = [...elementos];
                           arr[i].detalle[j].nroIguales = +e.target.value;
@@ -306,7 +303,6 @@ export default function PasoElementos({
         ))}
       </div>
 
-      {/* Botones de navegación */}
       <div className="flex justify-between">
         <button
           onClick={onBack}
@@ -315,9 +311,7 @@ export default function PasoElementos({
           Volver atrás
         </button>
         <button
-          onClick={() => {
-            if (validarCampos()) onNext();
-          }}
+          onClick={() => { if (validarCampos()) onNext(); }}
           className="px-4 py-2 bg-primary text-white rounded hover:bg-primary-dark"
         >
           Registrar planilla

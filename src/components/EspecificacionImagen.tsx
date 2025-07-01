@@ -22,8 +22,8 @@ export default function EspecificacionImagen({
         width={width}
         height={height}
         alt={alt}
-        crop={{ type: 'auto', source: true }}
-        className="rounded shadow"
+        crop="fit"
+        className="rounded shadow object-contain"
       />
     </div>
   );

@@ -3,13 +3,14 @@ import { fetcher } from "./api";
 export interface DetalleDto {
   especificacion: string;
   posicion: string;
-  tipo: number;
-  medidaDiametro: number;
-  longitudCorte: number;
-  cantidadUnitaria: number;
-  nroElementos: number;
-  nroIguales: number;
+  tipo: number | undefined;
+  medidaDiametro: number | undefined;
+  longitudCorte: number | undefined;
+  cantidadUnitaria: number | undefined;
+  nroElementos: number | undefined;
+  nroIguales: number | undefined;
 }
+
 
 export interface UpdateDetalleDto {
   especificacion?: string;
@@ -17,9 +18,7 @@ export interface UpdateDetalleDto {
   tipo?: number;
   medidaDiametro?: number;
   longitudCorte?: number;
-  cantidadUnitaria?: number;
-  nroElementos?: number;
-  nroIguales?: number;
+  cantidadTotal?: number;
 }
 
 export interface ElementoDto {
@@ -139,7 +138,7 @@ export interface RendimientosPromedio {
 
 export interface BatchUpdate {
   idDetalle: number;
-  dto: UpdateDetalleDto;
+  updateDetalleDto: UpdateDetalleDto;
 }
 
 export async function getPlanillaByNro(nroPlanilla: string, idTarea: number): Promise<PlanillaResponse> {
