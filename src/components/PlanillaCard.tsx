@@ -38,7 +38,7 @@ export default function PlanillaCard({
 
   return (
     <div className="border rounded-lg bg-white shadow overflow-hidden">
-      <div className="grid grid-cols-6 text-center text-sm">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 text-center text-sm">
         <div className="p-3 border-r flex flex-col items-center justify-center">
           <span className="font-semibold">Planilla N°:</span>
           <span>{planilla.nro_planilla}</span>
@@ -78,7 +78,7 @@ export default function PlanillaCard({
       </div>
 
       {/* Contenedor de botones comprimido y botones flexibles */}
-      <div className="flex flex-wrap gap-6 bg-gray-100 px-4 py-4">
+      <div className="flex flex-col sm:flex-row flex-wrap gap-4 bg-gray-100 px-4 py-4">
         <button
           onClick={() => onCorte?.(planilla.nro_planilla)}
           className="flex-1 px-4 py-2 bg-primary text-white rounded hover:bg-primary-dark transition text-center"

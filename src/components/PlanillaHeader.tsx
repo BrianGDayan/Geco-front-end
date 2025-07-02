@@ -3,18 +3,25 @@ import { PlanillaResponse } from '@/lib/planillas';
 
 interface Props {
   planilla: PlanillaResponse;
+  idTarea: number;
 }
 
-export default function PlanillaHeader({ planilla }: Props) {
+export default function PlanillaHeader({ planilla, idTarea }: Props) {
+   const tareaLabels: Record<number, string> = {
+    1: 'Corte',
+    2: 'Doblado',
+    3: 'Empaquetado',
+  };
+
   // Usamos el progreso calculado en backend
   const progresoTotal = planilla.progreso ?? 0;
 
   return (
     <div className="bg-white rounded-lg shadow p-6 mb-6">
       <h2 className="text-lg font-semibold text-primary-dark mb-4">
-        CORTE / DOBLADO / EMPAQUETADO
+        Datos de la planilla - {tareaLabels[idTarea]}
       </h2>
-      <div className="grid grid-cols-2 gap-4 mb-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
         <div>
           <label className="block text-sm font-medium text-gray-text">
             Nº planilla

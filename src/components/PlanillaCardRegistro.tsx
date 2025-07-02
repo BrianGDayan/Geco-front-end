@@ -7,14 +7,18 @@ import { DetalleResponse, RegistroResponse } from '@/lib/planillas';
 import RegistroModal from './RegistroModal';
 import EspecificacionImagen from '@/components/EspecificacionImagen';
 
+function highlight(field: string, camposModificados?: string[]) {
+  return camposModificados?.includes(field)
+    ? 'border-2 border-red-500'
+    : '';
+}
+
 interface Props {
   elementoNombre: string;
   detalles: DetalleResponse[];
   idTarea: number;
   onRegistroGuardado: () => void;
 }
-
-const isImageUrl = (s: string) => /\.(jpe?g|png|gif|webp)$/i.test(s);
 
 export default function PlanillaCardRegistro({
   elementoNombre,
@@ -48,6 +52,7 @@ export default function PlanillaCardRegistro({
                 <th rowSpan={2} className="py-2 px-3 border">Detalle</th>
                 <th rowSpan={2} className="py-2 px-3 border bg-primary-light text-white">Cant. Total</th>
                 <th rowSpan={2} className="py-2 px-3 border">Tipo</th>
+                <th rowSpan={2} className="py-2 px-3 border">Posición</th>
                 <th rowSpan={2} className="py-2 px-3 border">Ø (mm)</th>
                 <th rowSpan={2} className="py-2 px-3 border">Long. Corte (m)</th>
                 <th rowSpan={2} className="py-2 px-3 border">Fecha</th>
@@ -69,25 +74,33 @@ export default function PlanillaCardRegistro({
                 const puedeAgregar = acumulado < detalle.cantidad_total;
 
                 // función para renderizar celda "Detalle"
-                const renderEspecificacion = () =>
-                  isImageUrl(detalle.especificacion)
-                    ? <EspecificacionImagen publicId={detalle.especificacion} width={100} height={100} />
-                    : detalle.especificacion;
+               const renderEspecificacion = () => detalle.especificacion 
+                  ? <EspecificacionImagen publicId={detalle.especificacion} width={300} height={300} />
+                  : <span className="text-gray-500 italic">Sin especificación</span>;
 
                 if (registros.length > 0) {
                   return registros.map((reg, idx) => (
                     <tr key={`${detalle.id_detalle}-${reg.id_registro}`} className="border-t">
                       {idx === 0 && (
                         <>
-                          <td rowSpan={registros.length} className="py-2 px-3 border">
+                          <td rowSpan={registros.length} className={`py-2 px-3 border ${highlight('especificacion', detalle.campos_modificados)}`}>
                             {renderEspecificacion()}
                           </td>
-                          <td rowSpan={registros.length} className="py-2 px-3 border bg-primary-light text-white font-semibold">
+                          <td rowSpan={registros.length} className={`py-2 px-3 border bg-primary-light text-white font-semibold ${highlight('cantidad_total', detalle.campos_modificados)}`}>
                             {detalle.cantidad_total}
                           </td>
-                          <td rowSpan={registros.length} className="py-2 px-3 border">{detalle.tipo}</td>
-                          <td rowSpan={registros.length} className="py-2 px-3 border">{detalle.medida_diametro}</td>
-                          <td rowSpan={registros.length} className="py-2 px-3 border">{detalle.longitud_corte}</td>
+                          <td rowSpan={registros.length} className={`py-2 px-3 border ${highlight('tipo', detalle.campos_modificados)}`}>
+                            {detalle.tipo}
+                          </td>
+                          <td rowSpan={registros.length} className={`py-2 px-3 border ${highlight('posicion', detalle.campos_modificados)}`}>
+                            {detalle.posicion}
+                          </td>
+                          <td rowSpan={registros.length} className={`py-2 px-3 border ${highlight('medida_diametro', detalle.campos_modificados)}`}>
+                            {detalle.medida_diametro}
+                          </td>
+                          <td rowSpan={registros.length} className={`py-2 px-3 border ${highlight('longitud_corte', detalle.campos_modificados)}`}>
+                            {detalle.longitud_corte}
+                          </td>
                         </>
                       )}
                       <td className="py-2 px-3 border">{new Date(reg.fecha).toLocaleDateString('es-ES')}</td>
@@ -121,15 +134,24 @@ export default function PlanillaCardRegistro({
 
                 return (
                   <tr key={`vacio-${detalle.id_detalle}`} className="border-t">
-                    <td className="py-2 px-3 border">
+                    <td className={`py-2 px-3 border ${highlight('especificacion', detalle.campos_modificados)}`}>
                       {renderEspecificacion()}
                     </td>
-                    <td className="py-2 px-3 border bg-primary-light text-white font-semibold">
+                    <td className={`py-2 px-3 border bg-primary-light text-white font-semibold ${highlight('cantidad_total', detalle.campos_modificados)}`}>
                       {detalle.cantidad_total}
                     </td>
-                    <td className="py-2 px-3 border">{detalle.tipo}</td>
-                    <td className="py-2 px-3 border">{detalle.medida_diametro}</td>
-                    <td className="py-2 px-3 border">{detalle.longitud_corte}</td>
+                    <td className={`py-2 px-3 border ${highlight('tipo', detalle.campos_modificados)}`}>
+                      {detalle.tipo}
+                    </td>
+                    <td className={`py-2 px-3 border ${highlight('posicion', detalle.campos_modificados)}`}>
+                      {detalle.posicion}
+                    </td>
+                    <td className={`py-2 px-3 border ${highlight('medida_diametro', detalle.campos_modificados)}`}>
+                      {detalle.medida_diametro}
+                    </td>
+                    <td className={`py-2 px-3 border ${highlight('longitud_corte', detalle.campos_modificados)}`}>
+                      {detalle.longitud_corte}
+                    </td>
                     <td className="py-2 px-3 border">—</td>
                     <td className="py-2 px-3 border">—</td>
                     <td className="py-2 px-3 border">—</td>

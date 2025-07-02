@@ -18,7 +18,7 @@ export default function RegistroVista({
 }: Props) {
   return (
     <>
-      <PlanillaHeader planilla={planilla} />
+      <PlanillaHeader planilla={planilla} idTarea={idTarea}/>
       {planilla.elemento.map(elem => (
         <PlanillaCardRegistro
           key={elem.id_elemento}

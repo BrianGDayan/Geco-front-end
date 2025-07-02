@@ -12,9 +12,10 @@ import {
 import type { UpdateDetalleDto } from '@/lib/planillas';
 import EspecificacionImagen from '@/components/EspecificacionImagen';
 
-// Helper para decidir la clase CSS de “resalte” de celdas
-function highlight(field: string, modified: string[]) {
-  return modified?.includes(field) ? 'ring-2 ring-secondary-dark' : '';
+function highlight(field: string, camposModificados?: string[]) {
+  return camposModificados?.includes(field)
+    ? 'border-2 border-red-500'
+    : '';
 }
 
 type DetalleConNombre = DetalleResponse & { nombre_elemento: string };
@@ -47,6 +48,11 @@ export default function AdminTablaRegistro({ planilla, detalles, idTarea, onSave
 
   // Sincroniza editDetalles cuando recibimos nuevos detalles
   useEffect(() => {
+    console.log("Detalles recibidos con campos_modificados:");
+  detalles.forEach(d => {
+    console.log(`id_detalle: ${d.id_detalle}`, d.campos_modificados);
+  });
+
     const inicial: Record<number, EditDetalle> = detalles.reduce((acc, d) => {
       acc[d.id_detalle] = {
         especificacion: d.especificacion,
@@ -247,32 +253,32 @@ const handleGuardarCambios = async () => {
               <tr key={`d-${d.id_detalle}`} className="border-t">
                 <td className="py-2 px-3 border text-center">{d.nombre_elemento}</td>
                 <td rowSpan={rowSpan} className={`py-2 px-3 border relative ${highlight('especificacion', d.campos_modificados)}`}>
-                  <EspecificacionImagen publicId={d.especificacion} width={100} height={100} alt={`Detalle ${d.id_detalle}`} />
-                  {enCurso && (
-                    <>
-                      <button
-                        onClick={() => fileInputs[d.id_detalle].click()}
-                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                        title="Cambiar especificación"
-                      />
-                      <input
-                        type="file"
-                        accept="image/*"
-                        ref={el => { if (el) fileInputs[d.id_detalle] = el; }}
-                        style={{ display: 'none' }}
-                        onChange={async e => {
-                          const file = e.target.files?.[0];
-                          if (file) {
-                            const { publicId } = await uploadEspecificacion(file);
-                            await UpdateDetalle(d.id_detalle, { especificacion: publicId });
-                            handleFieldChange(d.id_detalle, 'especificacion', publicId);
-                          }
-                        }}
-                      />
-                    </>
-                  )}
+                  <EspecificacionImagen publicId={d.especificacion} width={200} height={200} alt={`Detalle ${d.id_detalle}`} />
+                    {enCurso && (
+                      <>
+                        <button
+                          onClick={() => fileInputs[d.id_detalle].click()}
+                          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                          title="Cambiar especificación"
+                        />
+                        <input
+                          type="file"
+                          accept="image/*"
+                          ref={el => { if (el) fileInputs[d.id_detalle] = el; }}
+                          style={{ display: 'none' }}
+                          onChange={async e => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              const { publicId } = await uploadEspecificacion(file);
+                              await UpdateDetalle(d.id_detalle, { especificacion: publicId });
+                              handleFieldChange(d.id_detalle, 'especificacion', publicId);
+                            }
+                          }}
+                        />
+                      </>
+                    )}
                 </td>
-                <td className="py-2 px-3 border">
+                <td rowSpan={rowSpan} className={`py-2 px-3 border ${highlight('posicion', d.campos_modificados)}`}>
                   <input
                     type="text"
                     value={editDetalles[d.id_detalle]?.posicion || ''}
@@ -281,7 +287,7 @@ const handleGuardarCambios = async () => {
                     className="w-full border rounded px-1 py-0.5 text-sm"
                   />
                 </td>
-                <td className="py-2 px-3 border">
+                <td rowSpan={rowSpan} className={`py-2 px-3 border ${highlight('tipo', d.campos_modificados)}`}>
                   <input
                     type="number"
                     value={editDetalles[d.id_detalle]?.tipo || ''}
@@ -301,7 +307,7 @@ const handleGuardarCambios = async () => {
                     step="1"
                   />
                 </td>
-                <td className="py-2 px-3 border">
+                <td rowSpan={rowSpan} className={`py-2 px-3 border ${highlight('longitud_corte', d.campos_modificados)}`}>
                   <input
                     type="number"
                     value={editDetalles[d.id_detalle]?.longitud_corte || ''}
@@ -311,7 +317,7 @@ const handleGuardarCambios = async () => {
                     step="0.01"
                   />
                 </td>
-               <td rowSpan={rowSpan} className={`py-2 px-3 border border-r-2 bg-primary-light text-gray-900 font-semibold ${highlight('cantidad_total', d.campos_modificados)}`}>
+                <td rowSpan={rowSpan} className={`py-2 px-3 border border-r-2 bg-primary-light text-gray-900 font-semibold ${highlight('cantidad_total', d.campos_modificados)}`}>
                   <input
                     type="number"
                     value={editDetalles[d.id_detalle]?.cantidad_total || ''}

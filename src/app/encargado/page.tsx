@@ -41,8 +41,10 @@ export default function PlanillasPageEncargado() {
     );
 
   return (
-    <div className="p-6">
-      <h1 className="text-2xl font-bold mb-6 text-center">Planillas en Curso</h1>
+    <div className="px-4 sm:px-6 py-4">
+      <h1 className="text-xl sm:text-2xl font-bold mb-4 text-center">
+        Planillas en Curso
+      </h1>
       <PlanillaListEncargado planillas={planillas!} />
     </div>
   );

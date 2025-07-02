@@ -1,29 +1,28 @@
-import Header from "./header"
-import './globals.css'
-import { Inter } from "next/font/google"
+import Header from "./header";
+import "./globals.css";
+import { Inter } from "next/font/google";
 
 const inter = Inter({
   subsets: ["latin"],
   variable: "--font-inter",
-})
+});
 
 export const metadata = {
-  title: 'Sistema de control de gestion',
-  description: 'Control de gestion de la empresa GECO',
-}
-
+  title: "Sistema de control de gestion",
+  description: "Control de gestion de la empresa GECO",
+};
 
 export default function RootLayout({
   children,
 }: {
-  children: React.ReactNode
+  children: React.ReactNode;
 }) {
   return (
     <html lang="es" className={inter.variable}>
-      <body className="font-sans bg-gray-bg">
+      <body className="font-sans bg-gray-bg overflow-x-hidden">
         <Header />
         {children}
       </body>
     </html>
-  )
+  );
 }

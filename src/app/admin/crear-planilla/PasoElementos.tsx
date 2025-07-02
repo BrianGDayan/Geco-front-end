@@ -4,6 +4,7 @@ import { ElementoDto, DetalleDto } from "@/lib/planillas";
 import { useEffect, useState } from "react";
 import { PlusCircle, Trash2, ChevronDown, ChevronUp } from "lucide-react";
 import { uploadEspecificacion } from "@/lib/planillas";
+import { CldImage } from "next-cloudinary";
 
 interface PasoElementosProps {
   item: string;
@@ -88,7 +89,7 @@ const handleFileChange = async (
   j: number
 ) => {
   try {
-    const { url } = await uploadEspecificacion(file);
+    const { publicId } = await uploadEspecificacion(file);
     // Clon profundo basado en `elementos`
     const updated = elementos.map((el, ei) =>
       ei !== i
@@ -96,7 +97,7 @@ const handleFileChange = async (
         : {
             ...el,
             detalle: el.detalle.map((det, dj) =>
-              dj === j ? { ...det, especificacion: url } : det
+              dj === j ? { ...det, especificacion: publicId } : det
             ),
           }
     );
@@ -164,16 +165,6 @@ const handleFileChange = async (
                     <p title={det.especificacion || `Detalle ${j + 1}`} className="flex-1 border rounded px-2 py-1 bg-gray-100 text-gray-700 truncate overflow-hidden whitespace-nowrap">
                      {det.especificacion ? det.especificacion : `Detalle ${j + 1}`}
                     </p>
-                    {det.especificacion && (
-                      <button
-                        onClick={() => {
-                          navigator.clipboard.writeText(det.especificacion);
-                        }}
-                        className="text-sm px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
-                      >
-                        Copiar
-                      </button>
-                    )}
                     <label className="cursor-pointer text-blue-600 hover:underline">
                       📁
                       <input
@@ -186,14 +177,16 @@ const handleFileChange = async (
                         }}
                       />
                     </label>
-                    {det.especificacion &&
-                      /\.(jpe?g|png|gif|webp)$/i.test(det.especificacion) && (
-                        <img
-                          src={det.especificacion}
-                          alt="Foto detalle"
-                          className="h-12 w-12 object-cover rounded"
-                        />
-                      )}
+                  {det.especificacion && (
+                    <CldImage
+                      src={det.especificacion}
+                      width={50}
+                      height={50}
+                      alt="Miniatura detalle"
+                      crop="thumb"
+                      className="h-12 w-12 object-cover rounded"
+                    />
+                  )}
                     <button onClick={() => toggleExpand(key)}>
                       {isOpen ? <ChevronUp /> : <ChevronDown />}
                     </button>
