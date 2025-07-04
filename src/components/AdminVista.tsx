@@ -1,4 +1,3 @@
-// components/AdminVista.tsx
 'use client';
 
 import React from "react";

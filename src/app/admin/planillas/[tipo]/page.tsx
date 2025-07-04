@@ -2,11 +2,7 @@
 
 import { use, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import {
-  getPlanillasCompletadas,
-  getPlanillasEnCurso,
-  PlanillaSummary,
-} from '@/lib/planillas';
+import { getPlanillasCompletadas, getPlanillasEnCurso, PlanillaSummary } from '@/lib/planillas';
 import PlanillaListAdmin from '@/components/PlanillaListAdmin';
 import { motion } from 'framer-motion';
 
@@ -77,7 +73,14 @@ export default function PlanillasPageClient({ params }: Props) {
       transition={{ duration: 0.3 }}
     >
       <h1 className="text-2xl font-bold mb-6 text-center">{title}</h1>
-      <PlanillaListAdmin planillas={planillas!} tipo={tipo} />
+
+      {planillas && planillas.length === 0 ? (
+        <p className="text-red-600 text-lg text-center">
+          Actualmente no hay planillas
+        </p>
+      ) : (
+        <PlanillaListAdmin planillas={planillas!} tipo={tipo} />
+      )}
     </motion.div>
   );
 }

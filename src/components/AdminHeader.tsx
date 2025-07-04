@@ -7,7 +7,7 @@ interface Props {
 }
 
 export default function AdminHeader({ planilla }: Props) {
-  // Usamos el progreso calculado en backend
+
   const progresoTotal = planilla.progreso ?? 0;
 
   return (

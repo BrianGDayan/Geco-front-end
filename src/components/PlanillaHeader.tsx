@@ -13,7 +13,7 @@ export default function PlanillaHeader({ planilla, idTarea }: Props) {
     3: 'Empaquetado',
   };
 
-  // Usamos el progreso calculado en backend
+
   const progresoTotal = planilla.progreso ?? 0;
 
   return (

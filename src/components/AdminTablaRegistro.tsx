@@ -1,14 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import {
-  PlanillaResponse,
-  DetalleResponse,
-  RegistroResponse,
-  UpdateDetalle,
-  updateDetallesBatch,
-  uploadEspecificacion
-} from '@/lib/planillas';
+import { PlanillaResponse, DetalleResponse, RegistroResponse, UpdateDetalle, updateDetallesBatch, uploadEspecificacion } from '@/lib/planillas';
 import type { UpdateDetalleDto } from '@/lib/planillas';
 import EspecificacionImagen from '@/components/EspecificacionImagen';
 
@@ -38,7 +31,7 @@ interface EditDetalle {
 }
 
 export default function AdminTablaRegistro({ planilla, detalles, idTarea, onSave }: Props) {
-  // Estado local de ediciones, inicial vacío y poblado al cambiar detalles
+
   const [editDetalles, setEditDetalles] = useState<Record<number, EditDetalle>>({});
   const fileInputs = React.useRef<Record<number, HTMLInputElement>>({}).current;
   const [isSaving, setIsSaving] = useState(false);
@@ -46,7 +39,6 @@ export default function AdminTablaRegistro({ planilla, detalles, idTarea, onSave
 
   const enCurso = planilla.progreso < 100;
 
-  // Sincroniza editDetalles cuando recibimos nuevos detalles
   useEffect(() => {
     console.log("Detalles recibidos con campos_modificados:");
   detalles.forEach(d => {
@@ -234,7 +226,7 @@ const handleGuardarCambios = async () => {
                           value={editDetalles[d.id_detalle]?.cantidad_total || ''}
                           onChange={e => handleFieldChange(d.id_detalle, 'cantidad_total', +e.target.value)}
                           disabled={!enCurso}
-                          className="w-full border rounded px-1 py-0.5 text-sm"
+                          className="w-full border rounded px-1 py-0.5 text-sm bg-white"
                           step="1"
                         />
                       </td>

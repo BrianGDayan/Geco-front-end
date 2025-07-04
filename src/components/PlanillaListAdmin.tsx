@@ -1,5 +1,3 @@
-// src/components/PlanillaListAdmin.tsx
-
 'use client';
 
 import { useRouter } from 'next/navigation';
@@ -15,7 +13,6 @@ export default function PlanillaListAdmin({ planillas, tipo }: Props) {
   const router = useRouter();
 
   return (
-    // espacio vertical reducido
     <div className="space-y-4">
       {planillas.map((p) => (
         <PlanillaCard

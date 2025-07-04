@@ -10,7 +10,6 @@ export interface LoginResponse {
   rol: 'admin' | 'encargado';
 }
 
-
 export async function login(loginDto: LoginDto): Promise<LoginResponse> {
   const res = await fetcher<LoginResponse>("/auth/login", {
     method: "POST",

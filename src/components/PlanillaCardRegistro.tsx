@@ -1,4 +1,3 @@
-// components/PlanillaCardRegistro.tsx
 'use client';
 
 import React, { useState } from 'react';
@@ -73,7 +72,7 @@ export default function PlanillaCardRegistro({
                 const acumulado = registros.reduce((sum, r) => sum + r.cantidad, 0);
                 const puedeAgregar = acumulado < detalle.cantidad_total;
 
-                // función para renderizar celda "Detalle"
+                // función para renderizar detalle
                const renderEspecificacion = () => detalle.especificacion 
                   ? <EspecificacionImagen publicId={detalle.especificacion} width={300} height={300} />
                   : <span className="text-gray-500 italic">Sin especificación</span>;

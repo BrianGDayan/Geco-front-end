@@ -78,29 +78,29 @@ export default function SelectorDeObras() {
             <div className="bg-primary-light text-white p-4 rounded-lg shadow-md space-y-4 w-full">
               <div className="space-y-2">
                 <RendimientoItem
-                  label="Corte (trabajador)"
+                  label="Corte (Cortador 1)"
                   valor={rendimientos.rendimiento_global_corte_trabajador}
                 />
                 <RendimientoItem
-                  label="Doblado (trabajador)"
+                  label="Doblado (Doblador)"
                   valor={rendimientos.rendimiento_global_doblado_trabajador}
                 />
                 <RendimientoItem
-                  label="Empaquetado (trabajador)"
+                  label="Empaquetado (Empaquetador 1)"
                   valor={rendimientos.rendimiento_global_empaquetado_trabajador}
                 />
               </div>
               <div className="space-y-2">
                 <RendimientoItem
-                  label="Corte (ayudante)"
+                  label="Corte (Cortador 2)"
                   valor={rendimientos.rendimiento_global_corte_ayudante}
                 />
                 <RendimientoItem
-                  label="Doblado (ayudante)"
+                  label="Doblado (Ayudante)"
                   valor={rendimientos.rendimiento_global_doblado_ayudante}
                 />
                 <RendimientoItem
-                  label="Empaquetado (ayudante)"
+                  label="Empaquetado (Empaquetador 2)"
                   valor={rendimientos.rendimiento_global_empaquetado_ayudante}
                 />
               </div>

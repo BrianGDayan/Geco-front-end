@@ -12,45 +12,36 @@ function getJwtSecretKey() {
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
   const token = req.cookies.get("access_token")?.value;
-
-  console.log("🔒 Middleware ejecutado en:", pathname);
-
   const isAdminRoute = pathname.startsWith("/admin");
   const isEncargadoRoute = pathname.startsWith("/encargado");
   const isLoginRoute = pathname === "/login";
 
-  // Si NO hay token y la ruta está protegida → redirigir
+  // Redirigir si no hay token y está intentando acceder a rutas protegidas
   if (!token && (isAdminRoute || isEncargadoRoute)) {
-    console.log("❌ No token en ruta protegida, redirigiendo a /login");
     return NextResponse.redirect(new URL("/login", req.url));
   }
 
-  // Si HAY token, validar
+  // Validar el token JWT
   if (token) {
     try {
       const { payload } = await jwtVerify(token, getJwtSecretKey());
       const rol = payload.rol;
 
-      console.log("✅ Token válido. Rol:", rol);
-
-      // Si está logueado e intenta ir al login → redirigir a su home
+      // Redirigir a la página home del rol correspondiente si está en login
       if (isLoginRoute) {
         return NextResponse.redirect(new URL(`/${rol}`, req.url));
       }
 
       // Protección por rol
       if (isAdminRoute && rol !== "admin") {
-        console.log("⛔ Acceso denegado a /admin para rol:", rol);
         return NextResponse.redirect(new URL("/unauthorized", req.url));
       }
 
       if (isEncargadoRoute && rol !== "encargado") {
-        console.log("⛔ Acceso denegado a /encargado para rol:", rol);
         return NextResponse.redirect(new URL("/unauthorized", req.url));
       }
 
     } catch (error) {
-      console.error("⚠️ Error verificando el JWT:", error);
       // Redirigir a login si el token es inválido, pero solo si no está ya en login
       if (!isLoginRoute) {
         return NextResponse.redirect(new URL("/login", req.url));

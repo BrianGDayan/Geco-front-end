@@ -45,7 +45,14 @@ export default function PlanillasPageEncargado() {
       <h1 className="text-xl sm:text-2xl font-bold mb-4 text-center">
         Planillas en Curso
       </h1>
-      <PlanillaListEncargado planillas={planillas!} />
+
+      {planillas && planillas.length === 0 ? (
+        <p className="text-red-600 text-lg text-center">
+          Actualmente no hay planillas
+        </p>
+      ) : (
+        <PlanillaListEncargado planillas={planillas!} />
+      )}
     </div>
   );
 }

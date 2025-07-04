@@ -14,7 +14,6 @@ interface PasoElementosProps {
   onBack: () => void;
 }
 
-// 👉 Detalle por defecto, numéricos undefined para mostrar placeholder
 const DEFAULT_DETALLE: DetalleDto = {
   especificacion: '',
   posicion: '',
@@ -90,7 +89,7 @@ const handleFileChange = async (
 ) => {
   try {
     const { publicId } = await uploadEspecificacion(file);
-    // Clon profundo basado en `elementos`
+
     const updated = elementos.map((el, ei) =>
       ei !== i
         ? el

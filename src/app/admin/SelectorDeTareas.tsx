@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { Listbox } from "@headlessui/react";
 import clsx from "clsx";
-import { getRendimientosPorTarea } from "@/lib/trabajadores"; // Ajusta la ruta si es distinta
+import { getRendimientosPorTarea } from "@/lib/trabajadores"; 
 
 interface TrabajadorPerformance {
   id: number;

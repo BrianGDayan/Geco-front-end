@@ -11,7 +11,6 @@ interface Props {
 }
 
 export default function RegistrarDatosPage({ params }: Props) {
-  // Desestructuramos los params con React.use()
   const { nroPlanilla, idTarea } = React.use(params);
   const router = useRouter();
   const [planilla, setPlanilla] = useState<PlanillaResponse | null>(null);
@@ -33,7 +32,6 @@ export default function RegistrarDatosPage({ params }: Props) {
   return (
     <div className="min-h-screen bg-gray-100 flex justify-center">
       <div className="w-full max-w-7xl p-6">
-        {/* Botón Volver atrás */}
         <button
           onClick={() => router.back()}
           className="inline-flex items-center mb-6 bg-[#226FB7] hover:bg-[#1a5aa3] text-white px-4 py-2 rounded transition"
