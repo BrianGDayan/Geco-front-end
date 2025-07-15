@@ -1,10 +1,9 @@
-"use client";
+'use client';
 
 import { useEffect, useState } from "react";
 import { Listbox } from "@headlessui/react";
 import clsx from "clsx";
-import { getObras } from "@/lib/planillas"; 
-import { getRendimientosPorObra } from "@/lib/planillas";
+import { getObras, getRendimientosPorObra } from "@/lib/planillas";
 
 interface Rendimientos {
   rendimiento_global_corte_trabajador: number | null;
@@ -21,21 +20,24 @@ export default function SelectorDeObras() {
   const [rendimientos, setRendimientos] = useState<Rendimientos | null>(null);
 
   useEffect(() => {
-    getObras()
-      .then((data) => setObras(data))
-      .catch((err) => console.error("Error al cargar obras:", err));
+    getObras().then((data) => setObras(data));
   }, []);
 
   useEffect(() => {
     if (obraSeleccionada) {
       const obraParam = obraSeleccionada === "Todas" ? "todas" : obraSeleccionada;
-      getRendimientosPorObra(obraParam)
-        .then((data) => setRendimientos(data))
-        .catch((err) => console.error("Error al cargar rendimientos:", err));
+      getRendimientosPorObra(obraParam).then((data) => setRendimientos(data));
     } else {
       setRendimientos(null);
     }
   }, [obraSeleccionada]);
+
+  const sumaAyudantes =
+    (rendimientos?.rendimiento_global_corte_trabajador ?? 0) +
+    (rendimientos?.rendimiento_global_corte_ayudante ?? 0) +
+    (rendimientos?.rendimiento_global_empaquetado_trabajador ?? 0) +
+    (rendimientos?.rendimiento_global_empaquetado_ayudante ?? 0) +
+    (rendimientos?.rendimiento_global_doblado_ayudante ?? 0);
 
   return (
     <div className="flex flex-col gap-6 w-full">
@@ -75,8 +77,8 @@ export default function SelectorDeObras() {
             <h2 className="text-lg font-medium mb-2">
               Rendimientos de {obraSeleccionada}
             </h2>
-            <div className="bg-primary-light text-white p-4 rounded-lg shadow-md space-y-4 w-full">
-              <div className="space-y-2">
+            <div className="bg-primary-light text-white p-6 rounded-2xl shadow-md space-y-6 w-full">
+              <div className="space-y-3">
                 <RendimientoItem
                   label="Corte (Cortador 1)"
                   valor={rendimientos.rendimiento_global_corte_trabajador}
@@ -90,7 +92,7 @@ export default function SelectorDeObras() {
                   valor={rendimientos.rendimiento_global_empaquetado_trabajador}
                 />
               </div>
-              <div className="space-y-2">
+              <div className="space-y-3">
                 <RendimientoItem
                   label="Corte (Cortador 2)"
                   valor={rendimientos.rendimiento_global_corte_ayudante}
@@ -104,18 +106,28 @@ export default function SelectorDeObras() {
                   valor={rendimientos.rendimiento_global_empaquetado_ayudante}
                 />
               </div>
-              <div className="border-t border-white/50 pt-4">
-                <h3 className="text-sm font-semibold mb-1">Suma de rendimientos</h3>
-                <p className="text-lg font-bold">
-                  {(
-                    (rendimientos.rendimiento_global_corte_trabajador ?? 0) +
-                    (rendimientos.rendimiento_global_doblado_trabajador ?? 0) +
-                    (rendimientos.rendimiento_global_empaquetado_trabajador ?? 0) +
-                    (rendimientos.rendimiento_global_corte_ayudante ?? 0) +
-                    (rendimientos.rendimiento_global_doblado_ayudante ?? 0) +
-                    (rendimientos.rendimiento_global_empaquetado_ayudante ?? 0)
-                  ).toFixed(3)}
-                </p>
+
+              {/* Bloque Suma de Rendimientos */}
+              <div className="border-t border-white/40 pt-5">
+                <h3 className="text-base font-bold mb-3 tracking-wide uppercase">
+                  Suma de rendimientos
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 text-center">
+                  {/* Doblador */}
+                  <div>
+                    <h4 className="text-sm font-medium text-white/90 mb-1">Doblador</h4>
+                    <p className="text-xl font-extrabold text-white">
+                      {(rendimientos.rendimiento_global_doblado_trabajador ?? 0).toFixed(3)}
+                    </p>
+                  </div>
+                  {/* Ayudantes */}
+                  <div>
+                    <h4 className="text-sm font-medium text-white/90 mb-1">Ayudantes</h4>
+                    <p className="text-xl font-extrabold text-white">
+                      {sumaAyudantes.toFixed(3)}
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -130,10 +142,8 @@ export default function SelectorDeObras() {
 function RendimientoItem({ label, valor }: { label: string; valor: number | null }) {
   return (
     <div className="flex justify-between">
-      <span className="font-semibold text-white">{valor?.toFixed(3) ?? "-"}</span>
+      <span className="font-semibold text-white text-lg">{valor?.toFixed(3) ?? "-"}</span>
       <span className="text-sm">{label}</span>
     </div>
   );
 }
-
-

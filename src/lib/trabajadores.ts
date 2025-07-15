@@ -15,6 +15,15 @@ export interface TrabajadorPerformance {
     rendimiento: number;
 }
 
+export interface TrabajadorActivo {
+  id_trabajador: number;
+  nombre: string;
+}
+
+export async function getTrabajadoresActivos(): Promise<TrabajadorActivo[]> {
+  return fetcher<TrabajadorActivo[]>("/trabajadores/activos");
+}
+
 export async function getRendimientosPorTarea(idTarea: number): Promise<TrabajadorPerformance[]> {
   const res = await fetcher<RendimientoResponse[]>(`/trabajadores/rendimiento-por-tarea?idTarea=${idTarea}`);
   return res.map((t) => {

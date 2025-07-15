@@ -26,7 +26,6 @@ export default function Login() {
         window.location.href = "/";
       }
     } catch (error: any) {
-      console.error("Error al iniciar sesión:", error);
       setShowError(true);
     }
   };

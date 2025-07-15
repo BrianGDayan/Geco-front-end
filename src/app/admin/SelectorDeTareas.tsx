@@ -25,7 +25,6 @@ export default function SelectorDeTareas() {
     if (tareaSeleccionada !== null) {
       getRendimientosPorTarea(tareaSeleccionada)
         .then((data) => setRendimientos(data))
-        .catch((err) => console.error("Error cargando rendimientos:", err));
     } else {
       setRendimientos([]);
     }
@@ -69,7 +68,7 @@ export default function SelectorDeTareas() {
           <tr>
             <th className="border px-4 py-2">Nro</th>
             <th className="border px-4 py-2">Trabajador</th>
-            <th className="border px-4 py-2">Rendimiento</th>
+            <th className="border px-4 py-2">Rendimiento (horas/kg)</th>
           </tr>
         </thead>
         <tbody>

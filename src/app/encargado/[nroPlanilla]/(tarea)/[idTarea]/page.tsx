@@ -32,14 +32,15 @@ export default function RegistrarDatosPage({ params }: Props) {
   return (
     <div className="min-h-screen bg-gray-100 flex justify-center">
       <div className="w-full max-w-7xl p-6">
-        <button
-          onClick={() => router.back()}
-          className="inline-flex items-center mb-6 bg-[#226FB7] hover:bg-[#1a5aa3] text-white px-4 py-2 rounded transition"
-        >
-          <ChevronLeft className="w-4 h-4 mr-2" />
-          Volver atrás
-        </button>
-
+        <div className="sticky top-0 z-50 bg-gray-100 pb-4">
+          <button
+            onClick={() => router.back()}
+            className="inline-flex items-center bg-[#226FB7] hover:bg-[#1a5aa3] text-white px-4 py-2 rounded transition"
+          >
+            <ChevronLeft className="w-4 h-4 mr-2" />
+            Volver atrás
+          </button>
+        </div>
         <RegistroVista
           planilla={planilla!}
           idTarea={Number(idTarea)}

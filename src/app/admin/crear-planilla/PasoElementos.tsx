@@ -1,6 +1,7 @@
 'use client';
 
-import { ElementoDto, DetalleDto } from "@/lib/planillas";
+import useSWR from 'swr';
+import { ElementoDto, DetalleDto, getDiametros } from "@/lib/planillas";
 import { useEffect, useState } from "react";
 import { PlusCircle, Trash2, ChevronDown, ChevronUp } from "lucide-react";
 import { uploadEspecificacion } from "@/lib/planillas";
@@ -34,6 +35,8 @@ export default function PasoElementos({
 }: PasoElementosProps) {
   const [expanded, setExpanded] = useState<Record<number, boolean>>({});
   const [errores, setErrores] = useState<Record<string, boolean>>({});
+  const { data: diametros, error: diamError } = useSWR('/planillas/diametros', getDiametros);
+
 
   useEffect(() => {
     if (elementos.length === 0) {
@@ -88,7 +91,8 @@ const handleFileChange = async (
   j: number
 ) => {
   try {
-    const { publicId } = await uploadEspecificacion(file);
+    const oldId = elementos[i].detalle[j].especificacion || undefined;
+    const { publicId } = await uploadEspecificacion(file, oldId);
 
     const updated = elementos.map((el, ei) =>
       ei !== i
@@ -102,7 +106,7 @@ const handleFileChange = async (
     );
     setElementos(updated);
   } catch (e) {
-    console.error("Error subiendo imagen", e);
+    window.alert("Error al subir la imagen. Por favor intenta de nuevo.");
   }
 };
 
@@ -179,11 +183,11 @@ const handleFileChange = async (
                   {det.especificacion && (
                     <CldImage
                       src={det.especificacion}
-                      width={50}
-                      height={50}
+                      width={80}
+                      height={80}
                       alt="Miniatura detalle"
-                      crop="thumb"
-                      className="h-12 w-12 object-cover rounded"
+                      crop="scale"
+                      className="h-20 w-20 object-contain rounded"
                     />
                   )}
                     <button onClick={() => toggleExpand(key)}>
@@ -218,7 +222,7 @@ const handleFileChange = async (
                           arr[i].detalle[j].posicion = e.target.value;
                           setElementos(arr);
                         }}
-                        className="border rounded px-2 py-1"
+                        className="border rounded px-2 py-1 placeholder-gray-text"
                       />
                       <input
                         type="number"
@@ -229,19 +233,38 @@ const handleFileChange = async (
                           arr[i].detalle[j].tipo = +e.target.value;
                           setElementos(arr);
                         }}
-                        className="border rounded px-2 py-1"
+                        className="border rounded px-2 py-1 placeholder-gray-text"
                       />
-                      <input
-                        type="number"
-                        placeholder="Ø (mm)"
-                        value={det.medidaDiametro ?? ''}
-                        onChange={(e) => {
-                          const arr = [...elementos];
-                          arr[i].detalle[j].medidaDiametro = +e.target.value;
-                          setElementos(arr);
-                        }}
-                        className="border rounded px-2 py-1"
-                      />
+                      {!diamError && diametros ? (
+                        <select
+                          value={det.medidaDiametro ?? ''}
+                          onChange={(e) => {
+                            const raw = e.target.value;
+                            const val = raw === '' ? undefined : parseInt(raw, 10);
+                            const arr = [...elementos];
+                            arr[i].detalle[j].medidaDiametro = val!;
+                            setElementos(arr);
+                          }}
+                          className="border rounded px-2 py-1 text-gray-text placeholder-gray-text"
+                        >
+                          <option value="" disabled>
+                            Ø (mm)
+                          </option>
+                          {diametros.map((d) => (
+                            <option key={d.medida_diametro} value={d.medida_diametro}>
+                              {d.medida_diametro}
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        <input
+                          type="text"
+                          placeholder="Ø (mm)"
+                          value={det.medidaDiametro ?? ''}
+                          disabled
+                          className="border rounded px-2 py-1"
+                        />
+                      )}
                       <input
                         type="number"
                         placeholder="Long. Corte (m)"
@@ -251,7 +274,7 @@ const handleFileChange = async (
                           arr[i].detalle[j].longitudCorte = +e.target.value;
                           setElementos(arr);
                         }}
-                        className="border rounded px-2 py-1"
+                        className="border rounded px-2 py-1 placeholder-gray-text"
                       />
                       <input
                         type="number"
@@ -262,7 +285,7 @@ const handleFileChange = async (
                           arr[i].detalle[j].cantidadUnitaria = +e.target.value;
                           setElementos(arr);
                         }}
-                        className="border rounded px-2 py-1"
+                        className="border rounded px-2 py-1 placeholder-gray-text"
                       />
                       <input
                         type="number"
@@ -273,7 +296,7 @@ const handleFileChange = async (
                           arr[i].detalle[j].nroElementos = +e.target.value;
                           setElementos(arr);
                         }}
-                        className="border rounded px-2 py-1"
+                        className="border rounded px-2 py-1 placeholder-gray-text"
                       />
                       <input
                         type="number"
@@ -284,7 +307,7 @@ const handleFileChange = async (
                           arr[i].detalle[j].nroIguales = +e.target.value;
                           setElementos(arr);
                         }}
-                        className="border rounded px-2 py-1"
+                        className="border rounded px-2 py-1 placeholder-gray-text"
                       />
                     </div>
                   </div>

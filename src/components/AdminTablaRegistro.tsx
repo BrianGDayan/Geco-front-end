@@ -40,11 +40,6 @@ export default function AdminTablaRegistro({ planilla, detalles, idTarea, onSave
   const enCurso = planilla.progreso < 100;
 
   useEffect(() => {
-    console.log("Detalles recibidos con campos_modificados:");
-  detalles.forEach(d => {
-    console.log(`id_detalle: ${d.id_detalle}`, d.campos_modificados);
-  });
-
     const inicial: Record<number, EditDetalle> = detalles.reduce((acc, d) => {
       acc[d.id_detalle] = {
         especificacion: d.especificacion,
@@ -108,7 +103,6 @@ const handleGuardarCambios = async () => {
 
     await onSave();
   } catch (e: any) {
-    console.error(e);
     setError(e.message || 'Error guardando cambios');
   } finally {
     setIsSaving(false);
@@ -146,9 +140,10 @@ const handleGuardarCambios = async () => {
         </thead>
         <tbody>
           {detalles.map(d => {
-            const registros: RegistroResponse[] = d.detalle_tarea[0]?.registro ?? [];
+            const tareaName = idTarea === 1 ? 'Corte' : idTarea === 2 ? 'Doblado' : 'Empaquetado';
+            const tareaObj = d.detalle_tarea.find(dt => dt.tarea.nombre_tarea === tareaName);
+            const registros: RegistroResponse[] = tareaObj?.registro ?? [];
             const rowSpan = registros.length || 1;
-
             if (registros.length > 0) {
               return registros.map((r, idx) => (
                 <tr key={r.id_registro} className="border-t">
@@ -171,10 +166,14 @@ const handleGuardarCambios = async () => {
                               style={{ display: 'none' }}
                               onChange={async e => {
                                 const file = e.target.files?.[0];
-                                if (file) {
-                                  const { publicId } = await uploadEspecificacion(file);
+                                if (!file) return;
+                                try {
+                                  const oldId = d.especificacion || undefined;
+                                  const { publicId } = await uploadEspecificacion(file, oldId);
                                   await UpdateDetalle(d.id_detalle, { especificacion: publicId });
                                   handleFieldChange(d.id_detalle, 'especificacion', publicId);
+                                } catch {
+                                  window.alert('Error al subir la imagen. Por favor intenta de nuevo.');
                                 }
                               }}
                             />
@@ -260,10 +259,14 @@ const handleGuardarCambios = async () => {
                           style={{ display: 'none' }}
                           onChange={async e => {
                             const file = e.target.files?.[0];
-                            if (file) {
-                              const { publicId } = await uploadEspecificacion(file);
+                            if (!file) return;
+                            try {
+                              const oldId = d.especificacion || undefined;
+                              const { publicId } = await uploadEspecificacion(file, oldId);
                               await UpdateDetalle(d.id_detalle, { especificacion: publicId });
                               handleFieldChange(d.id_detalle, 'especificacion', publicId);
+                            } catch {
+                              window.alert('Error al subir la imagen. Por favor intenta de nuevo.');
                             }
                           }}
                         />

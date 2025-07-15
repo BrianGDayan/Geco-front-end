@@ -11,7 +11,6 @@ export interface DetalleDto {
   nroIguales: number | undefined;
 }
 
-
 export interface UpdateDetalleDto {
   especificacion?: string;
   posicion?: string;
@@ -117,6 +116,10 @@ export interface CloudinaryUploadResult {
   url: string;
 }
 
+export interface Diametro {
+  medida_diametro: number;
+}
+
 export interface PlanillaSummary {
   nro_planilla: string;
   obra: string;
@@ -146,6 +149,10 @@ export async function getPlanillaByNro(nroPlanilla: string, idTarea: number): Pr
   return res;
 }
 
+export async function getPlanillaCompleta(nroPlanilla: string): Promise<PlanillaResponse> {
+  return await fetcher<PlanillaResponse>(`/planillas/${nroPlanilla}/completa`);
+}
+
 export async function getPlanillasCompletadas(): Promise<PlanillaSummary[]> {
   const res = await fetcher<PlanillaSummary[]>("/planillas/completadas");
   return res;
@@ -165,6 +172,10 @@ export async function getRendimientosPorObra(obra: string): Promise<Rendimientos
   return res;
 }
 
+export async function getDiametros(): Promise<Diametro[]> {
+  return fetcher<Diametro[]>("/planillas/diametros");
+}
+
 export async function CreatePlanilla(planillaDto: PlanillaDto): Promise<PlanillaResponse> {
   const res = await fetcher<PlanillaResponse>("/planillas", {
     method: "POST",
@@ -174,9 +185,12 @@ export async function CreatePlanilla(planillaDto: PlanillaDto): Promise<Planilla
 }
 
 
-export async function uploadEspecificacion(file: File): Promise<CloudinaryUploadResult> {
+export async function uploadEspecificacion(file: File, oldPublicId?: string): Promise<CloudinaryUploadResult> {
   const form = new FormData();
   form.append("file", file);
+  if (oldPublicId) {
+    form.append("oldPublicId", oldPublicId);
+  }
   return fetcher<CloudinaryUploadResult>("/cloudinary/upload", {
     method: "POST",
     body: form,

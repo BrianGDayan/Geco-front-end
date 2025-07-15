@@ -1,6 +1,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import useSWR from 'swr';
+import { getTrabajadoresActivos, TrabajadorActivo } from '@/lib/trabajadores';
 import { Dialog } from '@headlessui/react';
 import { RegistroDto, CreateRegistro } from '@/lib/registros';
 
@@ -37,17 +39,24 @@ export default function RegistroModal({
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { data: trabajadores = [] } = useSWR('/trabajadores/activos', getTrabajadoresActivos);
 
-  useEffect(() => {
-    const saved = localStorage.getItem(`nombres-tarea-${idTarea}`);
-    if (saved) {
-      try {
-        const obj = JSON.parse(saved);
-        setNombre1(obj.nombre1 || '');
-        setNombre2(obj.nombre2 || '');
-      } catch {}
+
+
+ useEffect(() => {
+  const saved = localStorage.getItem(`nombres-tarea-${idTarea}`);
+  if (saved) {
+    try {
+      const obj = JSON.parse(saved);
+      setNombre1(obj.nombre1 || '');
+      setNombre2(''); 
+    } catch {
+      setNombre1('');
+      setNombre2('');
     }
-  }, [idTarea]);
+  }
+}, [idTarea]);
+
 
   const diffHoras = (start: string, end: string) => {
     const [h1, m1] = start.split(':').map(Number);
@@ -71,8 +80,9 @@ export default function RegistroModal({
       return;
     }
 
-    const tieneNombre2 = nombre2.trim() !== '';
+    const tieneNombre2 = nombre2 !== '';
     const tieneHoras2 = ini2 !== '' || fin2 !== '';
+
     if (tieneNombre2 && (!ini2 || !fin2)) {
       setError('Completa inicio y fin para el segundo operario.');
       return;
@@ -109,7 +119,7 @@ export default function RegistroModal({
       await CreateRegistro(payload);
       localStorage.setItem(
         `nombres-tarea-${idTarea}`,
-        JSON.stringify({ nombre1, nombre2 })
+        JSON.stringify({ nombre1 })
       );
       onSaved();
       onClose();
@@ -143,22 +153,35 @@ export default function RegistroModal({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700">{label1}</label>
-                <input
-                  type="text"
+                <select
                   value={nombre1}
                   onChange={e => setNombre1(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded"
                   required
-                />
+                >
+                  <option value="">Ninguno elegido</option>
+                  {trabajadores.map(t => (
+                    <option key={t.id_trabajador} value={t.nombre}>
+                      {t.nombre}
+                    </option>
+                  ))}
+                </select>
               </div>
+
               <div>
                 <label className="block text-sm font-medium text-gray-700">{label2} (opcional)</label>
-                <input
-                  type="text"
+                <select
                   value={nombre2}
                   onChange={e => setNombre2(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded"
-                />
+                >
+                  <option value="">Ninguno elegido</option>
+                  {trabajadores.map(t => (
+                    <option key={t.id_trabajador} value={t.nombre}>
+                      {t.nombre}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
 
@@ -183,7 +206,6 @@ export default function RegistroModal({
                   value={ini1}
                   onChange={e => setIni1(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded"
-                  required
                 />
                 <label className="block text-sm font-medium text-gray-700 mt-2">Fin – {label1}</label>
                 <input
@@ -191,7 +213,6 @@ export default function RegistroModal({
                   value={fin1}
                   onChange={e => setFin1(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded"
-                  required
                 />
               </div>
               <div>
@@ -201,15 +222,14 @@ export default function RegistroModal({
                   value={ini2}
                   onChange={e => setIni2(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded"
-                  required={nombre2.trim() !== ''}
                 />
+
                 <label className="block text-sm font-medium text-gray-700 mt-2">Fin – {label2}</label>
                 <input
                   type="time"
                   value={fin2}
                   onChange={e => setFin2(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded"
-                  required={nombre2.trim() !== ''}
                 />
               </div>
             </div>

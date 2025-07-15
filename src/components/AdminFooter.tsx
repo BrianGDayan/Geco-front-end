@@ -10,15 +10,27 @@ interface Props {
 type Stats = { sumTrab: number; sumAyu: number; count: number };
 
 export default function AdminFooter({ planilla }: Props) {
-  const { peso_total, pesos_diametro } = planilla;
+  const {
+    peso_total,
+    pesos_diametro,
+    rendimiento_global_corte_trabajador,
+    rendimiento_global_corte_ayudante,
+    rendimiento_global_doblado_trabajador,
+    rendimiento_global_doblado_ayudante,
+    rendimiento_global_empaquetado_trabajador,
+    rendimiento_global_empaquetado_ayudante,
+  } = planilla;
+
   const total = typeof peso_total === 'number' ? peso_total.toFixed(3) : '—';
   const lista = Array.isArray(pesos_diametro) ? pesos_diametro : [];
 
+  // Agrupa los rendimientos de todas las tareas (Corte, Doblado, Empaquetado)
   const agrupadoPorTipo = useMemo(() => {
     const mapa = new Map<string, { corte: Stats; doblado: Stats; empaquetado: Stats }>();
+
     planilla.elemento.forEach(({ detalle }) =>
       detalle.forEach((det) => {
-        const key = det.tipo;
+        const key = det.tipo.toString();
         if (!mapa.has(key)) {
           mapa.set(key, {
             corte: { sumTrab: 0, sumAyu: 0, count: 0 },
@@ -27,6 +39,7 @@ export default function AdminFooter({ planilla }: Props) {
           });
         }
         const stats = mapa.get(key)!;
+
         det.detalle_tarea.forEach((dt) => {
           const tarea = dt.tarea.nombre_tarea;
           dt.registro.forEach(({ rendimiento_trabajador: tr, rendimiento_ayudante: ay }) => {
@@ -47,6 +60,7 @@ export default function AdminFooter({ planilla }: Props) {
         });
       })
     );
+
     return Array.from(mapa.entries()).map(([tipo, s]) => ({
       tipo,
       corte1: s.corte.count ? s.corte.sumTrab / s.corte.count : 0,
@@ -57,6 +71,14 @@ export default function AdminFooter({ planilla }: Props) {
       empaq2: s.empaquetado.count ? s.empaquetado.sumAyu / s.empaquetado.count : 0,
     }));
   }, [planilla]);
+
+  // Calcula suma para Ayudantes:
+  const sumaAyudantes =
+    rendimiento_global_corte_trabajador +
+    rendimiento_global_corte_ayudante +
+    rendimiento_global_empaquetado_trabajador +
+    rendimiento_global_empaquetado_ayudante +
+    rendimiento_global_doblado_ayudante;
 
   return (
     <section className="space-y-8 max-w-7xl mx-auto px-4">
@@ -105,19 +127,19 @@ export default function AdminFooter({ planilla }: Props) {
                 <li className="flex justify-between">
                   <span>Corte:</span>
                   <span>
-                    {t.corte1.toFixed(3)} / {t.corte2.toFixed(3)}
+                    {t.corte1.toFixed(3)} / {t.corte2.toFixed(3)}
                   </span>
                 </li>
                 <li className="flex justify-between">
                   <span>Doblado:</span>
                   <span>
-                    {t.dobl1.toFixed(3)} / {t.dobl2.toFixed(3)}
+                    {t.dobl1.toFixed(3)} / {t.dobl2.toFixed(3)}
                   </span>
                 </li>
                 <li className="flex justify-between">
                   <span>Empaquetado:</span>
                   <span>
-                    {t.empaq1.toFixed(3)} / {t.empaq2.toFixed(3)}
+                    {t.empaq1.toFixed(3)} / {t.empaq2.toFixed(3)}
                   </span>
                 </li>
               </ul>
@@ -127,63 +149,60 @@ export default function AdminFooter({ planilla }: Props) {
       </div>
 
       {/* Rendimientos Globales */}
-      {planilla.rendimiento_global_corte_trabajador !== undefined && (
-        <div className="bg-white rounded-2xl shadow-md p-6">
-          <h2 className="text-xl font-semibold text-primary-dark mb-4 text-center">
-            Rendimientos Globales
-          </h2>
+      <div className="bg-white rounded-2xl shadow-md p-6">
+        <h2 className="text-xl font-semibold text-primary-dark mb-4 text-center">
+          Rendimientos Globales
+        </h2>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 text-center">
-            {/* Corte */}
-            <div>
-              <h3 className="text-sm font-medium text-gray-text mb-1">
-                Corte
-              </h3>
-              <p className="text-lg font-bold text-gray-text">
-                {planilla.rendimiento_global_corte_trabajador.toFixed(2)} /{' '}
-                {planilla.rendimiento_global_corte_ayudante.toFixed(2)}
-              </p>
-            </div>
-            {/* Doblado */}
-            <div>
-              <h3 className="text-sm font-medium text-gray-text mb-1">
-                Doblado
-              </h3>
-              <p className="text-lg font-bold text-gray-text">
-                {planilla.rendimiento_global_doblado_trabajador.toFixed(2)} /{' '}
-                {planilla.rendimiento_global_doblado_ayudante.toFixed(2)}
-              </p>
-            </div>
-            {/* Empaquetado */}
-            <div>
-              <h3 className="text-sm font-medium text-gray-text mb-1">
-                Empaquetado
-              </h3>
-              <p className="text-lg font-bold text-gray-text">
-                {planilla.rendimiento_global_empaquetado_trabajador.toFixed(2)} /{' '}
-                {planilla.rendimiento_global_empaquetado_ayudante.toFixed(2)}
-              </p>
-            </div>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 text-center">
+          {/* Corte */}
+          <div>
+            <h3 className="text-sm font-medium text-gray-text mb-1">Corte</h3>
+            <p className="text-xl font-bold text-gray-text">
+              {rendimiento_global_corte_trabajador.toFixed(3)} / 
+              {rendimiento_global_corte_ayudante.toFixed(3)}
+            </p>
+          </div>
+          {/* Doblado */}
+          <div>
+            <h3 className="text-sm font-medium text-gray-text mb-1">Doblado</h3>
+            <p className="text-xl font-bold text-gray-text">
+              {rendimiento_global_doblado_trabajador.toFixed(3)} / 
+              {rendimiento_global_doblado_ayudante.toFixed(3)}
+            </p>
+          </div>
+          {/* Empaquetado */}
+          <div>
+            <h3 className="text-sm font-medium text-gray-text mb-1">Empaquetado</h3>
+            <p className="text-xl font-bold text-gray-text">
+              {rendimiento_global_empaquetado_trabajador.toFixed(3)} / 
+              {rendimiento_global_empaquetado_ayudante.toFixed(3)}
+            </p>
+          </div>
+        </div>
+
+        <h3 className="mt-8 text-base font-bold text-primary-dark text-center uppercase tracking-wide">
+          Suma de Rendimientos
+        </h3>
+
+        <div className="mt-4 flex flex-col sm:flex-row justify-center items-center gap-5">
+          {/* Doblador */}
+          <div className="flex flex-col items-center px-3">
+            <h3 className="text-sm font-medium text-gray-text mb-1">Doblador</h3>
+            <p className="text-2xl font-extrabold text-primary-dark">
+              {rendimiento_global_doblado_trabajador.toFixed(3)}
+            </p>
           </div>
 
-          <h3 className="mt-6 text-md font-semibold text-primary-dark text-center">
-            Suma de Rendimientos
-          </h3>
-          <p className="text-lg font-bold text-gray-text text-center">
-            {(
-              (planilla.rendimiento_global_corte_trabajador ?? 0) +
-              (planilla.rendimiento_global_doblado_trabajador ?? 0) +
-              (planilla.rendimiento_global_empaquetado_trabajador ?? 0)
-            ).toFixed(2)}{' '}
-            /{' '}
-            {(
-              (planilla.rendimiento_global_corte_ayudante ?? 0) +
-              (planilla.rendimiento_global_doblado_ayudante ?? 0) +
-              (planilla.rendimiento_global_empaquetado_ayudante ?? 0)
-            ).toFixed(2)}
-          </p>
+          {/* Ayudantes */}
+          <div className="flex flex-col items-center px-3">
+            <h3 className="text-sm font-medium text-gray-text mb-1">Ayudantes</h3>
+            <p className="text-2xl font-extrabold text-primary-dark">
+              {sumaAyudantes.toFixed(3)}
+            </p>
+          </div>
         </div>
-      )}
+      </div>
     </section>
   );
 }

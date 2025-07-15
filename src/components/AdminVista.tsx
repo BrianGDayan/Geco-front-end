@@ -1,11 +1,15 @@
 'use client';
 
-import React from "react";
-import useSWR from "swr";
-import { getPlanillaByNro, PlanillaResponse } from "@/lib/planillas";
-import AdminHeader from "./AdminHeader";
-import AdminTablaRegistro from "./AdminTablaRegistro";
-import AdminFooter from "./AdminFooter";
+import React from 'react';
+import useSWR from 'swr';
+import {
+  getPlanillaByNro,
+  getPlanillaCompleta,
+  PlanillaResponse,
+} from '@/lib/planillas';
+import AdminHeader from './AdminHeader';
+import AdminTablaRegistro from './AdminTablaRegistro';
+import AdminFooter from './AdminFooter';
 
 interface Props {
   nroPlanilla: string;
@@ -13,19 +17,36 @@ interface Props {
 }
 
 export default function AdminVista({ nroPlanilla, idTarea }: Props) {
-  const { data: planilla, mutate, error } = useSWR<PlanillaResponse>(
-    ["/planillas", nroPlanilla, idTarea],
+  // Planilla filtrada: para header y tabla de registros
+  const {
+    data: planillaFiltrada,
+    mutate: mutateFiltrada,
+    error: errorFiltrada,
+  } = useSWR<PlanillaResponse>(
+    ['planilla', nroPlanilla, idTarea],
     () => getPlanillaByNro(nroPlanilla, idTarea)
   );
 
+  // Planilla completa: para footer
+  const {
+    data: planillaCompleta,
+    mutate: mutateCompleta,
+    error: errorCompleta,
+  } = useSWR<PlanillaResponse>(
+    ['planillaCompleta', nroPlanilla],
+    () => getPlanillaCompleta(nroPlanilla)
+  );
+
   const handleSave = async () => {
-    await mutate();
+    await Promise.all([mutateFiltrada(), mutateCompleta()]);
   };
 
-  if (error) return <div className="p-6 text-red-500">Error cargando planilla</div>;
-  if (!planilla) return <div className="p-6">Cargando planilla…</div>;
+  if (errorFiltrada || errorCompleta)
+    return <div className="p-6 text-red-500">Error cargando planilla</div>;
+  if (!planillaFiltrada || !planillaCompleta)
+    return <div className="p-6">Cargando planilla…</div>;
 
-  const detallesConNombre = planilla.elemento.flatMap((elem) =>
+  const detallesConNombre = planillaFiltrada.elemento.flatMap((elem) =>
     elem.detalle.map((d) => ({
       ...d,
       nombre_elemento: elem.nombre_elemento,
@@ -35,14 +56,14 @@ export default function AdminVista({ nroPlanilla, idTarea }: Props) {
 
   return (
     <>
-      <AdminHeader planilla={planilla} />
+      <AdminHeader planilla={planillaFiltrada} idTarea={idTarea} />
       <AdminTablaRegistro
-        planilla={planilla}
+        planilla={planillaFiltrada}
         detalles={detallesConNombre}
         idTarea={idTarea}
         onSave={handleSave}
       />
-      <AdminFooter planilla={planilla} />
+      <AdminFooter planilla={planillaCompleta} />
     </>
   );
 }
