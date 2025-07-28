@@ -97,10 +97,10 @@ const handleGuardarCambios = async () => {
         } as UpdateDetalleDto,
       }));
 
-    if (updates.length > 0) {
-      await updateDetallesBatch(planilla.nro_planilla, updates);
+  if (updates.length > 0) {
+      const nro = planilla.nro_planilla.trim();
+      await updateDetallesBatch(nro, updates);
     }
-
     await onSave();
   } catch (e: any) {
     setError(e.message || 'Error guardando cambios');
