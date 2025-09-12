@@ -1,9 +1,14 @@
 const PROD_BASE = process.env.NEXT_PUBLIC_API_URL;
 const BASE_URL = PROD_BASE ? `${PROD_BASE}/api` : "/api";
 
+console.log("👉 NEXT_PUBLIC_API_URL:", process.env.NEXT_PUBLIC_API_URL);
+console.log("👉 BASE_URL usado en fetcher:", BASE_URL);
+
 export async function fetcher<T>(url: string, options: RequestInit = {}): Promise<T> {
   const endpoint = url.startsWith("http") ? url : `${BASE_URL}${url}`;
   const isForm = options.body instanceof FormData;
+
+  console.log("👉 endpoint final:", endpoint);
 
   const res = await fetch(endpoint, {
     ...options,
