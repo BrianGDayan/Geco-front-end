@@ -23,7 +23,6 @@ const DEFAULT_DETALLE: DetalleDto = {
   longitudCorte: undefined,
   cantidadUnitaria: undefined,
   nroElementos: undefined,
-  nroIguales: undefined,
 };
 
 export default function PasoElementos({
@@ -294,17 +293,6 @@ const handleFileChange = async (
                         onChange={(e) => {
                           const arr = [...elementos];
                           arr[i].detalle[j].nroElementos = +e.target.value;
-                          setElementos(arr);
-                        }}
-                        className="border rounded px-2 py-1 placeholder-gray-text"
-                      />
-                      <input
-                        type="number"
-                        placeholder="N° Iguales"
-                        value={det.nroIguales ?? ''}
-                        onChange={(e) => {
-                          const arr = [...elementos];
-                          arr[i].detalle[j].nroIguales = +e.target.value;
                           setElementos(arr);
                         }}
                         className="border rounded px-2 py-1 placeholder-gray-text"

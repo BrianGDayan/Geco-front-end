@@ -8,7 +8,6 @@ export interface DetalleDto {
   longitudCorte: number | undefined;
   cantidadUnitaria: number | undefined;
   nroElementos: number | undefined;
-  nroIguales: number | undefined;
 }
 
 export interface UpdateDetalleDto {

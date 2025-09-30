@@ -1,10 +1,11 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState, Fragment } from 'react';
 import useSWR from 'swr';
+import { Dialog, Combobox, Transition } from '@headlessui/react';
+import { ChevronUpDownIcon, CheckIcon } from '@heroicons/react/20/solid';
 import { getTrabajadoresActivos, TrabajadorActivo } from '@/lib/trabajadores';
-import { Dialog } from '@headlessui/react';
-import { RegistroDto, CreateRegistro } from '@/lib/registros';
+import { CreateRegistro } from '@/lib/registros';
 
 interface Props {
   idDetalle: number;
@@ -29,77 +30,92 @@ export default function RegistroModal({
     3: ['Empaquetador 1', 'Empaquetador 2'],
   } as Record<number, [string, string]>;
 
-  const [nombre1, setNombre1] = useState('');
-  const [nombre2, setNombre2] = useState('');
-  const [cantidad, setCantidad] = useState(0);
-  const [ini1, setIni1] = useState('08:00');
-  const [fin1, setFin1] = useState('08:30');
-  const [ini2, setIni2] = useState('');
-  const [fin2, setFin2] = useState('');
+  const [nombre1, setNombre1] = useState<string>('');
+  const [nombre2, setNombre2] = useState<string>('');
+  const [query1, setQuery1] = useState<string>('');
+  const [query2, setQuery2] = useState<string>('');
+  const [cantidad, setCantidad] = useState<number>(1);
+  const [ini1, setIni1] = useState<string>('');
+  const [fin1, setFin1] = useState<string>('');
+  const [ini2, setIni2] = useState<string>('');
+  const [fin2, setFin2] = useState<string>('');
+  const [showAyudante, setShowAyudante] = useState<boolean>(false);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const { data: trabajadores = [] } = useSWR('/trabajadores/activos', getTrabajadoresActivos);
+  const [errorCantidad, setErrorCantidad] = useState('');
+  const [errorHoras1, setErrorHoras1] = useState('');
+  const [errorHoras2, setErrorHoras2] = useState('');
+  const { data: trabajadores = [] } = useSWR<TrabajadorActivo[]>('/trabajadores/activos', getTrabajadoresActivos);
 
+  const [label1, label2] = labels[idTarea] || ['Oficial', 'Ayudante'];
 
-
- useEffect(() => {
-  const saved = localStorage.getItem(`nombres-tarea-${idTarea}`);
-  if (saved) {
-    try {
-      const obj = JSON.parse(saved);
-      setNombre1(obj.nombre1 || '');
-      setNombre2(''); 
-    } catch {
-      setNombre1('');
-      setNombre2('');
+  useEffect(() => {
+    const saved = localStorage.getItem(`nombres-tarea-${idTarea}`);
+    if (saved) {
+      try {
+        const obj = JSON.parse(saved);
+        setNombre1(obj.nombre1 || '');
+      } catch {
+        setNombre1('');
+      }
     }
-  }
-}, [idTarea]);
+  }, [idTarea]);
 
+  const filtrar = (query: string, arr: TrabajadorActivo[]) =>
+    query.trim() === '' ? arr : arr.filter(t => t.nombre.toLowerCase().includes(query.toLowerCase()));
+
+  const filtered1 = filtrar(query1, trabajadores);
+  const filtered2 = filtrar(query2, trabajadores);
 
   const diffHoras = (start: string, end: string) => {
+    if (!start || !end) return 0;
     const [h1, m1] = start.split(':').map(Number);
     const [h2, m2] = end.split(':').map(Number);
-    const minutos = (h2 * 60 + m2) - (h1 * 60 + m1);
+    const minutos = h2 * 60 + m2 - (h1 * 60 + m1);
     return minutos > 0 ? +(minutos / 60).toFixed(2) : 0;
   };
 
+  const horaActual = () => {
+    const d = new Date();
+    return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+  };
+
+  // Normalizo el valor (Combobox puede pasar null)
+  const handleSelectNombre1 = (value: string | null) => setNombre1(value ?? '');
+  const handleSelectNombre2 = (value: string | null) => setNombre2(value ?? '');
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
+    setErrorCantidad('');
+    setErrorHoras1('');
+    setErrorHoras2('');
 
     if (cantidad <= 0 || cantidad > cantidadTotal) {
-      setError(`La cantidad debe ser mayor a 0 y menor o igual a ${cantidadTotal}`);
+      setErrorCantidad(`Debe ser mayor a 0 y ≤ ${cantidadTotal}`);
+      return;
+    }
+    if (!nombre1) {
+      setErrorHoras1('Seleccioná el operario principal.');
       return;
     }
 
     const horasTrab = diffHoras(ini1, fin1);
     if (horasTrab <= 0) {
-      setError('Las horas del primer operario no son válidas.');
-      return;
-    }
-
-    const tieneNombre2 = nombre2 !== '';
-    const tieneHoras2 = ini2 !== '' || fin2 !== '';
-
-    if (tieneNombre2 && (!ini2 || !fin2)) {
-      setError('Completa inicio y fin para el segundo operario.');
-      return;
-    }
-    if (!tieneNombre2 && tieneHoras2) {
-      setError('Si completás horas para el segundo operario, debe tener nombre.');
+      setErrorHoras1('Horas del principal no válidas.');
       return;
     }
 
     let horasAyu = 0;
-    if (tieneNombre2) {
-      const h2 = diffHoras(ini2, fin2);
-      if (h2 <= 0) {
-        setError('Las horas del segundo operario no son válidas.');
+    if (showAyudante && nombre2) {
+      horasAyu = diffHoras(ini2, fin2);
+      if (horasAyu <= 0) {
+        setErrorHoras2('Horas del ayudante no válidas.');
         return;
       }
-      horasAyu = h2;
+    }
+    if (showAyudante && !nombre2 && (ini2 || fin2)) {
+      setErrorHoras2('Si completás horas del ayudante, seleccioná un ayudante.');
+      return;
     }
 
     setIsSubmitting(true);
@@ -110,150 +126,225 @@ export default function RegistroModal({
       horasTrabajador: horasTrab,
       nombreTrabajador: nombre1,
     };
-    if (tieneNombre2) {
+    if (showAyudante && nombre2) {
       payload.nombreAyudante = nombre2;
       payload.horasAyudante = horasAyu;
     }
 
     try {
       await CreateRegistro(payload);
-      localStorage.setItem(
-        `nombres-tarea-${idTarea}`,
-        JSON.stringify({ nombre1 })
-      );
+      localStorage.setItem(`nombres-tarea-${idTarea}`, JSON.stringify({ nombre1 }));
       onSaved();
       onClose();
     } catch (err: any) {
-      setError(err.message || 'Error al guardar.');
       setIsSubmitting(false);
+      setErrorCantidad(err?.message || 'Error al guardar.');
     }
   };
 
-  const [label1, label2] = labels[idTarea] || ['Oficial', 'Ayudante'];
-
   return (
-  <Dialog open onClose={onClose} className="fixed inset-0 z-50 overflow-y-auto">
-    <div className="flex min-h-screen items-center justify-center px-4 py-8">
+    <Dialog open onClose={onClose} className="fixed inset-0 z-50">
       <div className="fixed inset-0 bg-black/40" aria-hidden="true" />
-      <Dialog.Panel className="relative z-10 w-full max-w-lg rounded-lg bg-white p-6 shadow-lg">
-          <Dialog.Title className="text-lg font-semibold text-gray-800 mb-4">
-            Nuevo registro
-          </Dialog.Title>
+      <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl p-5 shadow-lg max-h-[90vh] overflow-y-auto">
+        <Dialog.Title className="text-lg font-semibold mb-3">Nuevo registro</Dialog.Title>
 
-          <div className="flex justify-between mb-4">
-            <div className="px-3 py-1 border rounded text-sm text-gray-700">
-              Fecha: <span>{new Date().toLocaleDateString('es-AR')}</span>
-            </div>
-            <div className="px-3 py-1 border rounded text-sm text-gray-700">
-              Cantidad total: <span>{cantidadTotal}</span>
-            </div>
+        <div className="flex justify-between mb-4 text-sm">
+          <div className="w-full rounded-lg border px-3 py-3 text-base">Cantidad total: {cantidadTotal}</div>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-5">
+          {/* Operario principal */}
+          <div>
+            <label className="block font-medium text-gray-700 mb-1">{label1}</label>
+
+            <Combobox value={nombre1} onChange={handleSelectNombre1}>
+              {({ open }) => (
+                <div className="relative">
+                  <div className="flex items-center">
+                    <Combobox.Input
+                      className="w-full rounded-lg border px-3 py-3 text-base"
+                      placeholder={`Seleccionar ${label1}`}
+                      displayValue={(v: string | null) => v ?? ''}
+                      onChange={e => setQuery1(e.target.value)}
+                      // required => validación en submit
+                    />
+                    <Combobox.Button className="ml-2 p-2">
+                      <ChevronUpDownIcon className="h-5 w-5 text-gray-500" />
+                    </Combobox.Button>
+                  </div>
+
+                  <Transition
+                    show={open}
+                    as={Fragment}
+                    leave="transition ease-in duration-100"
+                    leaveFrom="opacity-100"
+                    leaveTo="opacity-0"
+                  >
+                    <Combobox.Options className="mt-1 max-h-60 overflow-auto rounded bg-white shadow z-10">
+                      {filtered1.length === 0 ? (
+                        <div className="px-3 py-2 text-sm text-gray-500">No hay resultados</div>
+                      ) : (
+                        filtered1.map(t => (
+                          <Combobox.Option
+                            key={t.id_trabajador}
+                            value={t.nombre}
+                            className={({ active }) => `cursor-pointer px-3 py-2 ${active ? 'bg-gray-100' : ''}`}
+                          >
+                            {({ selected }) => (
+                              <div className="flex items-center justify-between">
+                                <span className={`${selected ? 'font-semibold' : ''}`}>{t.nombre}</span>
+                                {selected && <CheckIcon className="h-4 w-4 text-green-600" />}
+                              </div>
+                            )}
+                          </Combobox.Option>
+                        ))
+                      )}
+                    </Combobox.Options>
+                  </Transition>
+                </div>
+              )}
+            </Combobox>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700">{label1}</label>
-                <select
-                  value={nombre1}
-                  onChange={e => setNombre1(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded"
-                  required
-                >
-                  <option value="">Ninguno elegido</option>
-                  {trabajadores.map(t => (
-                    <option key={t.id_trabajador} value={t.nombre}>
-                      {t.nombre}
-                    </option>
-                  ))}
-                </select>
-              </div>
+          {/* Ayudante (opcional) */}
+          <div>
+            <label className="flex items-center gap-2 select-none">
+              <input type="checkbox" checked={showAyudante} onChange={e => setShowAyudante(e.target.checked)} />
+              Agregar {label2}
+            </label>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700">{label2} (opcional)</label>
-                <select
-                  value={nombre2}
-                  onChange={e => setNombre2(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded"
-                >
-                  <option value="">Ninguno elegido</option>
-                  {trabajadores.map(t => (
-                    <option key={t.id_trabajador} value={t.nombre}>
-                      {t.nombre}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
+            {showAyudante && (
+              <div className="mt-2">
+                <label className="block text-sm font-medium mb-1">{label2}</label>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Cantidad</label>
+                <Combobox value={nombre2} onChange={handleSelectNombre2}>
+                  {({ open }) => (
+                    <div className="relative">
+                      <div className="flex items-center">
+                        <Combobox.Input
+                          className="w-full rounded-lg border px-3 py-3 text-base"
+                          placeholder={`Seleccionar ${label2}`}
+                          displayValue={(v: string | null) => v ?? ''}
+                          onChange={e => setQuery2(e.target.value)}
+                        />
+                        <Combobox.Button className="ml-2 p-2">
+                          <ChevronUpDownIcon className="h-5 w-5 text-gray-500" />
+                        </Combobox.Button>
+                      </div>
+
+                      <Transition
+                        show={open}
+                        as={Fragment}
+                        leave="transition ease-in duration-100"
+                        leaveFrom="opacity-100"
+                        leaveTo="opacity-0"
+                      >
+                        <Combobox.Options className="mt-1 max-h-60 overflow-auto rounded bg-white shadow z-10">
+                          {filtered2.length === 0 ? (
+                            <div className="px-3 py-2 text-sm text-gray-500">No hay resultados</div>
+                          ) : (
+                            filtered2.map(t => (
+                              <Combobox.Option
+                                key={t.id_trabajador}
+                                value={t.nombre}
+                                className={({ active }) => `cursor-pointer px-3 py-2 ${active ? 'bg-gray-100' : ''}`}
+                              >
+                                {({ selected }) => (
+                                  <div className="flex items-center justify-between">
+                                    <span className={`${selected ? 'font-semibold' : ''}`}>{t.nombre}</span>
+                                    {selected && <CheckIcon className="h-4 w-4 text-green-600" />}
+                                  </div>
+                                )}
+                              </Combobox.Option>
+                            ))
+                          )}
+                        </Combobox.Options>
+                      </Transition>
+                    </div>
+                  )}
+                </Combobox>
+              </div>
+            )}
+          </div>
+
+          {/* Cantidad */}
+          <div>
+            <label className="block font-medium mb-1">Cantidad</label>
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setCantidad(c => Math.max(1, c - 1))}
+                className="px-3 py-2 bg-gray-200 rounded text-xl"
+                aria-label="Disminuir cantidad"
+              >
+                −
+              </button>
               <input
                 type="number"
+                inputMode="numeric"
+                pattern="[0-9]*"
                 value={cantidad}
-                onChange={e => setCantidad(+e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded"
+                onChange={e => setCantidad(Number(e.target.value))}
+                className="w-20 text-center rounded border py-2 text-lg"
                 min={1}
                 max={cantidadTotal}
                 required
               />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Inicio – {label1}</label>
-                <input
-                  type="time"
-                  value={ini1}
-                  onChange={e => setIni1(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded"
-                />
-                <label className="block text-sm font-medium text-gray-700 mt-2">Fin – {label1}</label>
-                <input
-                  type="time"
-                  value={fin1}
-                  onChange={e => setFin1(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Inicio – {label2}</label>
-                <input
-                  type="time"
-                  value={ini2}
-                  onChange={e => setIni2(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded"
-                />
-
-                <label className="block text-sm font-medium text-gray-700 mt-2">Fin – {label2}</label>
-                <input
-                  type="time"
-                  value={fin2}
-                  onChange={e => setFin2(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded"
-                />
-              </div>
-            </div>
-
-            {error && <p className="text-red-600 text-sm">{error}</p>}
-
-            <div className="flex justify-end gap-4 mt-6">
               <button
                 type="button"
-                onClick={onClose}
-                className="px-4 py-2 bg-secondary text-white rounded hover:bg-secondary-dark transition"
+                onClick={() => setCantidad(c => Math.min(cantidadTotal, c + 1))}
+                className="px-3 py-2 bg-gray-200 rounded text-xl"
+                aria-label="Aumentar cantidad"
               >
-                Volver atrás
-              </button>
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="px-4 py-2 bg-primary text-white rounded hover:bg-primary-dark transition disabled:opacity-50"
-              >
-                {isSubmitting ? 'Guardando...' : 'Guardar cambios'}
+                +
               </button>
             </div>
-          </form>
-        </Dialog.Panel>
+            {errorCantidad && <p className="text-red-600 text-sm mt-1">{errorCantidad}</p>}
+          </div>
+
+          {/* Horas */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            <div>
+              <label className="block text-sm font-medium mb-1">Inicio – {label1}</label>
+              <div className="flex gap-2">
+                <input type="time" value={ini1} onChange={e => setIni1(e.target.value)} className="flex-1 rounded border px-3 py-2" required />
+                <button type="button" onClick={() => setIni1(horaActual())} className="px-2 bg-gray-200 rounded">Ahora</button>
+              </div>
+
+              <label className="block text-sm font-medium mt-3 mb-1">Fin – {label1}</label>
+              <div className="flex gap-2">
+                <input type="time" value={fin1} onChange={e => setFin1(e.target.value)} className="flex-1 rounded border px-3 py-2" required />
+                <button type="button" onClick={() => setFin1(horaActual())} className="px-2 bg-gray-200 rounded">Ahora</button>
+              </div>
+              {errorHoras1 && <p className="text-red-600 text-sm mt-1">{errorHoras1}</p>}
+            </div>
+
+            {showAyudante && (
+              <div>
+                <label className="block text-sm font-medium mb-1">Inicio – {label2}</label>
+                <div className="flex gap-2">
+                  <input type="time" value={ini2} onChange={e => setIni2(e.target.value)} className="flex-1 rounded border px-3 py-2" />
+                  <button type="button" onClick={() => setIni2(horaActual())} className="px-2 bg-gray-200 rounded">Ahora</button>
+                </div>
+
+                <label className="block text-sm font-medium mt-3 mb-1">Fin – {label2}</label>
+                <div className="flex gap-2">
+                  <input type="time" value={fin2} onChange={e => setFin2(e.target.value)} className="flex-1 rounded border px-3 py-2" />
+                  <button type="button" onClick={() => setFin2(horaActual())} className="px-2 bg-gray-200 rounded">Ahora</button>
+                </div>
+                {errorHoras2 && <p className="text-red-600 text-sm mt-1">{errorHoras2}</p>}
+              </div>
+            )}
+          </div>
+
+          {/* Botones */}
+          <div className="flex justify-end gap-4 mt-4">
+            <button type="button" onClick={onClose} className="px-5 py-3 rounded bg-gray-300 text-gray-800 text-base">Volver</button>
+            <button type="submit" disabled={isSubmitting} className="px-5 py-3 rounded bg-blue-600 text-white text-base disabled:opacity-50">
+              {isSubmitting ? 'Guardando...' : 'Guardar'}
+            </button>
+          </div>
+        </form>
       </div>
     </Dialog>
   );

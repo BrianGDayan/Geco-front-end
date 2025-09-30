@@ -84,7 +84,7 @@ export default function PasoCabecera({
             value={cabecera.nroPlanilla}
             onChange={handleChange}
             className={`border rounded p-2 mt-1 ${esCampoInvalido("nroPlanilla") ? "border-red-500" : "border-gray-border"}`}
-            maxLength={15}
+            maxLength={30}
             required
           />
         </div>
@@ -144,7 +144,7 @@ export default function PasoCabecera({
             value={cabecera.encargadoElaborar}
             onChange={handleChange}
             className={`border rounded p-2 mt-1 ${esCampoInvalido("encargadoElaborar") ? "border-red-500" : "border-gray-border"}`}
-            maxLength={15}
+            maxLength={5}
             required
           />
         </div>
@@ -159,7 +159,7 @@ export default function PasoCabecera({
             value={cabecera.encargadoRevisar}
             onChange={handleChange}
             className={`border rounded p-2 mt-1 ${esCampoInvalido("encargadoRevisar") ? "border-red-500" : "border-gray-border"}`}
-            maxLength={15}
+            maxLength={5}
             required
           />
         </div>
@@ -174,7 +174,7 @@ export default function PasoCabecera({
             value={cabecera.encargadoAprobar}
             onChange={handleChange}
             className="border border-gray-border rounded p-2 mt-1"
-            maxLength={15}
+            maxLength={5}
           />
         </div>
 

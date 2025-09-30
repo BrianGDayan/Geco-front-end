@@ -31,6 +31,8 @@ export default function PlanillaCardRegistro({
     cantidadTotal: number;
   } | null>(null);
 
+  const [showDetails, setShowDetails] = useState<number | null>(null);
+
   const horasSub: string[] =
     idTarea === 1
       ? ['Cort.1', 'Cort.2']
@@ -50,10 +52,13 @@ export default function PlanillaCardRegistro({
               <tr className="bg-primary-dark text-white">
                 <th rowSpan={2} className="py-2 px-3 border">Detalle</th>
                 <th rowSpan={2} className="py-2 px-3 border bg-primary-light text-white">Cant. Total</th>
-                <th rowSpan={2} className="py-2 px-3 border">Tipo</th>
-                <th rowSpan={2} className="py-2 px-3 border">Posición</th>
-                <th rowSpan={2} className="py-2 px-3 border">Ø (mm)</th>
-                <th rowSpan={2} className="py-2 px-3 border">Long. Corte (m)</th>
+
+                {/* Columnas visibles solo en escritorio */}
+                <th rowSpan={2} className="py-2 px-3 border hidden md:table-cell">Tipo</th>
+                <th rowSpan={2} className="py-2 px-3 border hidden md:table-cell">Posición</th>
+                <th rowSpan={2} className="py-2 px-3 border hidden md:table-cell">Ø (mm)</th>
+                <th rowSpan={2} className="py-2 px-3 border hidden md:table-cell">Long. Corte (m)</th>
+
                 <th rowSpan={2} className="py-2 px-3 border">Fecha</th>
                 <th rowSpan={2} className="py-2 px-3 border">Cantidad</th>
                 <th colSpan={2} className="py-2 px-3 border">Horas</th>
@@ -72,40 +77,59 @@ export default function PlanillaCardRegistro({
                 const acumulado = registros.reduce((sum, r) => sum + r.cantidad, 0);
                 const puedeAgregar = acumulado < detalle.cantidad_total;
 
-                // función para renderizar detalle
-               const renderEspecificacion = () => detalle.especificacion 
-                  ? <EspecificacionImagen publicId={detalle.especificacion} width={300} height={300} />
-                  : <span className="text-gray-500 italic">Sin especificación</span>;
+                const renderEspecificacion = () =>
+                  detalle.especificacion
+                    ? <EspecificacionImagen publicId={detalle.especificacion} width={150} height={150} />
+                    : <span className="text-gray-500 italic">Sin especificación</span>;
 
                 if (registros.length > 0) {
                   return registros.map((reg, idx) => (
                     <tr key={`${detalle.id_detalle}-${reg.id_registro}`} className="border-t">
                       {idx === 0 && (
                         <>
-                          <td rowSpan={registros.length} className={`py-2 px-3 border ${highlight('especificacion', detalle.campos_modificados)}`}>
-                            {renderEspecificacion()}
+                          <td rowSpan={registros.length} className={`py-2 px-3 border align-top ${highlight('especificacion', detalle.campos_modificados)}`}>
+                            <div className="flex flex-col items-center">
+                              {renderEspecificacion()}
+
+                              {/* Toggle solo en móvil */}
+                              <button
+                                onClick={() =>
+                                  setShowDetails(showDetails === detalle.id_detalle ? null : detalle.id_detalle)
+                                }
+                                className="mt-2 text-xs text-blue-600 underline md:hidden"
+                              >
+                                {showDetails === detalle.id_detalle ? 'Ocultar detalles' : 'Ver detalles'}
+                              </button>
+
+                              {/* Bloque ocultable en móvil */}
+                              {showDetails === detalle.id_detalle && (
+                                <div className="mt-2 text-xs text-left space-y-1 w-full md:hidden">
+                                  <p><strong>Tipo:</strong> {detalle.tipo}</p>
+                                  <p><strong>Posición:</strong> {detalle.posicion}</p>
+                                  <p><strong>Ø:</strong> {detalle.medida_diametro}</p>
+                                  <p><strong>Long. corte:</strong> {detalle.longitud_corte}</p>
+                                </div>
+                              )}
+                            </div>
                           </td>
+
                           <td rowSpan={registros.length} className={`py-2 px-3 border bg-primary-light text-white font-semibold ${highlight('cantidad_total', detalle.campos_modificados)}`}>
                             {detalle.cantidad_total}
                           </td>
-                          <td rowSpan={registros.length} className={`py-2 px-3 border ${highlight('tipo', detalle.campos_modificados)}`}>
-                            {detalle.tipo}
-                          </td>
-                          <td rowSpan={registros.length} className={`py-2 px-3 border ${highlight('posicion', detalle.campos_modificados)}`}>
-                            {detalle.posicion}
-                          </td>
-                          <td rowSpan={registros.length} className={`py-2 px-3 border ${highlight('medida_diametro', detalle.campos_modificados)}`}>
-                            {detalle.medida_diametro}
-                          </td>
-                          <td rowSpan={registros.length} className={`py-2 px-3 border ${highlight('longitud_corte', detalle.campos_modificados)}`}>
-                            {detalle.longitud_corte}
-                          </td>
+
+                          {/* Columnas escritorio */}
+                          <td rowSpan={registros.length} className="py-2 px-3 border hidden md:table-cell">{detalle.tipo}</td>
+                          <td rowSpan={registros.length} className="py-2 px-3 border hidden md:table-cell">{detalle.posicion}</td>
+                          <td rowSpan={registros.length} className="py-2 px-3 border hidden md:table-cell">{detalle.medida_diametro}</td>
+                          <td rowSpan={registros.length} className="py-2 px-3 border hidden md:table-cell">{detalle.longitud_corte}</td>
                         </>
                       )}
+
                       <td className="py-2 px-3 border">{new Date(reg.fecha).toLocaleDateString('es-ES')}</td>
                       <td className="py-2 px-3 border">{reg.cantidad}</td>
                       <td className="py-2 px-3 border">{reg.horas_trabajador}</td>
                       <td className="py-2 px-3 border">{reg.horas_ayudante}</td>
+
                       {idx === 0 && (
                         <td rowSpan={registros.length} className="py-2 px-3 border text-center">
                           <button
@@ -131,26 +155,40 @@ export default function PlanillaCardRegistro({
                   ));
                 }
 
+                // Caso sin registros
                 return (
                   <tr key={`vacio-${detalle.id_detalle}`} className="border-t">
-                    <td className={`py-2 px-3 border ${highlight('especificacion', detalle.campos_modificados)}`}>
-                      {renderEspecificacion()}
+                    <td className={`py-2 px-3 border align-top ${highlight('especificacion', detalle.campos_modificados)}`}>
+                      <div className="flex flex-col items-center">
+                        {renderEspecificacion()}
+                        <button
+                          onClick={() =>
+                            setShowDetails(showDetails === detalle.id_detalle ? null : detalle.id_detalle)
+                          }
+                          className="mt-2 text-xs text-blue-600 underline md:hidden"
+                        >
+                          {showDetails === detalle.id_detalle ? 'Ocultar detalles' : 'Ver detalles'}
+                        </button>
+                        {showDetails === detalle.id_detalle && (
+                          <div className="mt-2 text-xs text-left space-y-1 w-full md:hidden">
+                            <p><strong>Tipo:</strong> {detalle.tipo}</p>
+                            <p><strong>Posición:</strong> {detalle.posicion}</p>
+                            <p><strong>Ø:</strong> {detalle.medida_diametro}</p>
+                            <p><strong>Long. corte:</strong> {detalle.longitud_corte}</p>
+                          </div>
+                        )}
+                      </div>
                     </td>
                     <td className={`py-2 px-3 border bg-primary-light text-white font-semibold ${highlight('cantidad_total', detalle.campos_modificados)}`}>
                       {detalle.cantidad_total}
                     </td>
-                    <td className={`py-2 px-3 border ${highlight('tipo', detalle.campos_modificados)}`}>
-                      {detalle.tipo}
-                    </td>
-                    <td className={`py-2 px-3 border ${highlight('posicion', detalle.campos_modificados)}`}>
-                      {detalle.posicion}
-                    </td>
-                    <td className={`py-2 px-3 border ${highlight('medida_diametro', detalle.campos_modificados)}`}>
-                      {detalle.medida_diametro}
-                    </td>
-                    <td className={`py-2 px-3 border ${highlight('longitud_corte', detalle.campos_modificados)}`}>
-                      {detalle.longitud_corte}
-                    </td>
+
+                    {/* Columnas escritorio */}
+                    <td className="py-2 px-3 border hidden md:table-cell">{detalle.tipo}</td>
+                    <td className="py-2 px-3 border hidden md:table-cell">{detalle.posicion}</td>
+                    <td className="py-2 px-3 border hidden md:table-cell">{detalle.medida_diametro}</td>
+                    <td className="py-2 px-3 border hidden md:table-cell">{detalle.longitud_corte}</td>
+
                     <td className="py-2 px-3 border">—</td>
                     <td className="py-2 px-3 border">—</td>
                     <td className="py-2 px-3 border">—</td>
