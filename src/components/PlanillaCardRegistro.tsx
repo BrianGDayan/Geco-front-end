@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { PlusCircle } from 'lucide-react';
+import TimerButton from '@/components/TimerButton';
 import { DetalleResponse, RegistroResponse } from '@/lib/planillas';
 import RegistroModal from './RegistroModal';
 import EspecificacionImagen from '@/components/EspecificacionImagen';

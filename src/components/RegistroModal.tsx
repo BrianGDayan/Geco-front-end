@@ -6,6 +6,7 @@ import { Dialog, Combobox, Transition } from '@headlessui/react';
 import { ChevronUpDownIcon, CheckIcon } from '@heroicons/react/20/solid';
 import { getTrabajadoresActivos, TrabajadorActivo } from '@/lib/trabajadores';
 import { CreateRegistro } from '@/lib/registros';
+import { useTimers, secToTimeHHMM } from '@/hooks/useTimers';
 
 interface Props {
   idDetalle: number;
@@ -49,17 +50,23 @@ export default function RegistroModal({
 
   const [label1, label2] = labels[idTarea] || ['Oficial', 'Ayudante'];
 
+  const { getTimer, startTimer, stopTimer, clearTimer } = useTimers();
+  const timer = getTimer(idDetalleTarea);
+
   useEffect(() => {
-    const saved = localStorage.getItem(`nombres-tarea-${idTarea}`);
-    if (saved) {
-      try {
-        const obj = JSON.parse(saved);
-        setNombre1(obj.nombre1 || '');
-      } catch {
-        setNombre1('');
-      }
+    // Si el temporizador tiene meta con nombre guardado, prellenar.
+    if (timer?.meta?.nombre1) setNombre1(timer.meta.nombre1);
+    if (timer?.meta?.nombre2) { setNombre2(timer.meta.nombre2); setShowAyudante(true); }
+    if (timer?.meta?.cantidad) setCantidad(timer.meta.cantidad);
+    // Si está detenido y tiene elapsed, rellenar ini/fin usando startedAt/stoppedAt
+    if (timer && !timer.running && timer.startedAt && timer.stoppedAt) {
+      const s = new Date(timer.startedAt);
+      const e = new Date(timer.stoppedAt);
+      setIni1(`${String(s.getHours()).padStart(2,'0')}:${String(s.getMinutes()).padStart(2,'0')}`);
+      setFin1(`${String(e.getHours()).padStart(2,'0')}:${String(e.getMinutes()).padStart(2,'0')}`);
     }
-  }, [idTarea]);
+    // If running, show live elapsed in UI only.
+  }, [idDetalleTarea, timer]);
 
   const filtrar = (query: string, arr: TrabajadorActivo[]) =>
     query.trim() === '' ? arr : arr.filter(t => t.nombre.toLowerCase().includes(query.toLowerCase()));
@@ -80,16 +87,36 @@ export default function RegistroModal({
     return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
   };
 
-  // Normalizo el valor (Combobox puede pasar null)
   const handleSelectNombre1 = (value: string | null) => setNombre1(value ?? '');
   const handleSelectNombre2 = (value: string | null) => setNombre2(value ?? '');
 
+  // controlar inicio/parada desde modal
+  const handleStart = () => {
+    startTimer({
+      idDetalleTarea,
+      idDetalle,
+      idTarea,
+      meta: { nombre1, nombre2: nombre2 || undefined, cantidad },
+    });
+  };
+  const handleStop = () => {
+    stopTimer(idDetalleTarea);
+  };
+  const handleClear = () => {
+    clearTimer(idDetalleTarea);
+    // limpieza local
+    setIni1(''); setFin1(''); setNombre1(''); setNombre2('');
+    setShowAyudante(false);
+  };
+
+  // Si el timer está corriendo, calcular horas desde startedAt
+  const runningElapsedSec = timer?.running ? timer.elapsedSec ?? 0 : 0;
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setErrorCantidad('');
-    setErrorHoras1('');
-    setErrorHoras2('');
+    setErrorCantidad(''); setErrorHoras1(''); setErrorHoras2('');
 
+    // si existe timer detenido usar sus timestamps para calcular horas
     if (cantidad <= 0 || cantidad > cantidadTotal) {
       setErrorCantidad(`Debe ser mayor a 0 y ≤ ${cantidadTotal}`);
       return;
@@ -99,26 +126,41 @@ export default function RegistroModal({
       return;
     }
 
-    const horasTrab = diffHoras(ini1, fin1);
+    // preferir timestamps de temporizador cuando existan
+    let horasTrab = 0;
+    let horasAyu = 0;
+
+    if (timer && !timer.running && timer.startedAt && timer.stoppedAt) {
+      const s = new Date(timer.startedAt);
+      const e = new Date(timer.stoppedAt);
+      horasTrab = +( (e.getTime() - s.getTime()) / 3600000 ).toFixed(2);
+      // prefill ini/fin inputs for display/storage
+      setIni1(`${String(s.getHours()).padStart(2,'0')}:${String(s.getMinutes()).padStart(2,'0')}`);
+      setFin1(`${String(e.getHours()).padStart(2,'0')}:${String(e.getMinutes()).padStart(2,'0')}`);
+    } else {
+      horasTrab = diffHoras(ini1, fin1);
+    }
+
     if (horasTrab <= 0) {
       setErrorHoras1('Horas del principal no válidas.');
       return;
     }
 
-    let horasAyu = 0;
     if (showAyudante && nombre2) {
-      horasAyu = diffHoras(ini2, fin2);
-      if (horasAyu <= 0) {
-        setErrorHoras2('Horas del ayudante no válidas.');
-        return;
+      if (ini2 && fin2) {
+        horasAyu = diffHoras(ini2, fin2);
+        if (horasAyu <= 0) {
+          setErrorHoras2('Horas del ayudante no válidas.');
+          return;
+        }
+      } else {
+        // intentar usar meta del timer si existe (no implementamos tiempos separados para ayudante en timer)
+        horasAyu = 0;
       }
-    }
-    if (showAyudante && !nombre2 && (ini2 || fin2)) {
-      setErrorHoras2('Si completás horas del ayudante, seleccioná un ayudante.');
-      return;
     }
 
     setIsSubmitting(true);
+
     const payload: any = {
       idDetalle,
       idTarea,
@@ -133,7 +175,8 @@ export default function RegistroModal({
 
     try {
       await CreateRegistro(payload);
-      localStorage.setItem(`nombres-tarea-${idTarea}`, JSON.stringify({ nombre1 }));
+      // si guardó, limpiar timer asociado
+      clearTimer(idDetalleTarea);
       onSaved();
       onClose();
     } catch (err: any) {
@@ -166,7 +209,6 @@ export default function RegistroModal({
                       placeholder={`Seleccionar ${label1}`}
                       displayValue={(v: string | null) => v ?? ''}
                       onChange={e => setQuery1(e.target.value)}
-                      // required => validación en submit
                     />
                     <Combobox.Button className="ml-2 p-2">
                       <ChevronUpDownIcon className="h-5 w-5 text-gray-500" />
@@ -206,7 +248,7 @@ export default function RegistroModal({
             </Combobox>
           </div>
 
-          {/* Ayudante (opcional) */}
+          {/* Ayudante */}
           <div>
             <label className="flex items-center gap-2 select-none">
               <input type="checkbox" checked={showAyudante} onChange={e => setShowAyudante(e.target.checked)} />
@@ -302,40 +344,56 @@ export default function RegistroModal({
             {errorCantidad && <p className="text-red-600 text-sm mt-1">{errorCantidad}</p>}
           </div>
 
-          {/* Horas */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-sm font-medium mb-1">Inicio – {label1}</label>
-              <div className="flex gap-2">
-                <input type="time" value={ini1} onChange={e => setIni1(e.target.value)} className="flex-1 rounded border px-3 py-2" required />
-                <button type="button" onClick={() => setIni1(horaActual())} className="px-2 bg-gray-200 rounded">Ahora</button>
+          {/* Horas y temporizador */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <label className="block text-sm font-medium mb-1">Inicio – {label1}</label>
+                <input type="time" value={ini1} onChange={e => setIni1(e.target.value)} className="rounded border px-3 py-2" />
               </div>
 
-              <label className="block text-sm font-medium mt-3 mb-1">Fin – {label1}</label>
-              <div className="flex gap-2">
-                <input type="time" value={fin1} onChange={e => setFin1(e.target.value)} className="flex-1 rounded border px-3 py-2" required />
-                <button type="button" onClick={() => setFin1(horaActual())} className="px-2 bg-gray-200 rounded">Ahora</button>
+              <div>
+                <label className="block text-sm font-medium mb-1">Fin – {label1}</label>
+                <input type="time" value={fin1} onChange={e => setFin1(e.target.value)} className="rounded border px-3 py-2" />
               </div>
-              {errorHoras1 && <p className="text-red-600 text-sm mt-1">{errorHoras1}</p>}
+
+              <div className="flex flex-col items-end">
+                {/* Botones temporizador local */}
+                <div className="mb-1">
+                  {timer?.running ? (
+                    <button type="button" onClick={handleStop} className="px-3 py-2 bg-red-600 text-white rounded">Detener</button>
+                  ) : (
+                    <button type="button" onClick={handleStart} className="px-3 py-2 bg-green-600 text-white rounded">Iniciar</button>
+                  )}
+                </div>
+
+                <div className="text-xs text-gray-600">
+                  {timer?.running ? `En curso • ${secToTimeHHMM(timer.elapsedSec ?? 0)}` : timer && !timer.running && timer.elapsedSec ? `Última: ${secToTimeHHMM(timer.elapsedSec)}` : '—'}
+                </div>
+
+                {timer && !timer.running && (
+                  <button type="button" onClick={handleClear} className="mt-2 text-xs text-red-600 underline">Limpiar temporizador</button>
+                )}
+              </div>
             </div>
 
-            {showAyudante && (
+            {errorHoras1 && <p className="text-red-600 text-sm mt-1">{errorHoras1}</p>}
+          </div>
+
+          {/* Ayudante horas */}
+          {showAyudante && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium mb-1">Inicio – {label2}</label>
-                <div className="flex gap-2">
-                  <input type="time" value={ini2} onChange={e => setIni2(e.target.value)} className="flex-1 rounded border px-3 py-2" />
-                  <button type="button" onClick={() => setIni2(horaActual())} className="px-2 bg-gray-200 rounded">Ahora</button>
-                </div>
-
-                <label className="block text-sm font-medium mt-3 mb-1">Fin – {label2}</label>
-                <div className="flex gap-2">
-                  <input type="time" value={fin2} onChange={e => setFin2(e.target.value)} className="flex-1 rounded border px-3 py-2" />
-                  <button type="button" onClick={() => setFin2(horaActual())} className="px-2 bg-gray-200 rounded">Ahora</button>
-                </div>
-                {errorHoras2 && <p className="text-red-600 text-sm mt-1">{errorHoras2}</p>}
+                <input type="time" value={ini2} onChange={e => setIni2(e.target.value)} className="rounded border px-3 py-2" />
               </div>
-            )}
-          </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Fin – {label2}</label>
+                <input type="time" value={fin2} onChange={e => setFin2(e.target.value)} className="rounded border px-3 py-2" />
+              </div>
+              {errorHoras2 && <p className="text-red-600 text-sm mt-1">{errorHoras2}</p>}
+            </div>
+          )}
 
           {/* Botones */}
           <div className="flex justify-end gap-4 mt-4">
