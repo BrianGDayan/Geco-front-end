@@ -367,13 +367,6 @@ export default function RegistroModal({
                   )}
                 </div>
 
-                <div className="text-xs text-gray-600">
-                  {timer?.running ? `En curso • ${secToTimeHHMM(timer.elapsedSec ?? 0)}` : timer && !timer.running && timer.elapsedSec ? `Última: ${secToTimeHHMM(timer.elapsedSec)}` : '—'}
-                </div>
-
-                {timer && !timer.running && (
-                  <button type="button" onClick={handleClear} className="mt-2 text-xs text-red-600 underline">Limpiar temporizador</button>
-                )}
               </div>
             </div>
 

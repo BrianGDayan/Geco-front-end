@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useTimers, formatSecToHourDecimal } from '@/hooks/useTimers';
 
 interface Props {
@@ -12,9 +12,18 @@ interface Props {
 
 export default function TimerButton({ idDetalleTarea, idDetalle, idTarea, className }: Props) {
   const { getTimer, startTimer, stopTimer } = useTimers();
-  const timer = getTimer(idDetalleTarea);
+  const [, tick] = useState(0); // para forzar re-render
 
+  const timer = getTimer(idDetalleTarea);
   const running = timer?.running ?? false;
+
+  // efecto para actualizar cada segundo mientras corre
+  useEffect(() => {
+    if (!running) return;
+    const id = setInterval(() => tick(t => t + 1), 1000);
+    return () => clearInterval(id);
+  }, [running]);
+
   const elapsed = timer?.elapsedSec ?? (timer?.startedAt && timer?.stoppedAt ? Math.floor((new Date(timer.stoppedAt!).getTime() - new Date(timer.startedAt!).getTime()) / 1000) : 0);
   const { h, m } = formatSecToHourDecimal(elapsed);
 

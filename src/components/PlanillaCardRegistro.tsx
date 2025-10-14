@@ -1,16 +1,14 @@
 'use client';
 
-import React, { useState } from 'react';
-import { PlusCircle } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
 import TimerButton from '@/components/TimerButton';
 import { DetalleResponse, RegistroResponse } from '@/lib/planillas';
 import RegistroModal from './RegistroModal';
 import EspecificacionImagen from '@/components/EspecificacionImagen';
+import { useTimers } from '@/hooks/useTimers';
 
 function highlight(field: string, camposModificados?: string[]) {
-  return camposModificados?.includes(field)
-    ? 'border-2 border-red-500'
-    : '';
+  return camposModificados?.includes(field) ? 'border-2 border-red-500' : '';
 }
 
 interface Props {
@@ -33,6 +31,38 @@ export default function PlanillaCardRegistro({
   } | null>(null);
 
   const [showDetails, setShowDetails] = useState<number | null>(null);
+  const { timers } = useTimers();
+
+  // track previous running state to detect running -> stopped transitions
+  const prevRunningRef = useRef<Record<number, boolean>>({});
+
+  useEffect(() => {
+    // build lookup of timers for faster access
+    const lookup = timers || {};
+    detalles.forEach((detalle) => {
+      const tareaObj = detalle.detalle_tarea[0];
+      if (!tareaObj) return;
+      const key = tareaObj.id_detalle_tarea;
+      const prevRunning = prevRunningRef.current[key];
+      const timer = lookup[key];
+
+      // if previously running and now stopped, open modal (only if not already open)
+      if (prevRunning === true && timer && timer.running === false && timer.stoppedAt) {
+        // avoid opening modal if one is already open for same detalle
+        if (!showModal || showModal.idDetalleTarea !== key) {
+          setShowModal({
+            idDetalle: detalle.id_detalle,
+            idDetalleTarea: key,
+            cantidadTotal: detalle.cantidad_total,
+          });
+        }
+      }
+
+      // update prevRunningRef
+      prevRunningRef.current[key] = !!(timer && timer.running);
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [timers, detalles]);
 
   const horasSub: string[] =
     idTarea === 1
@@ -54,7 +84,6 @@ export default function PlanillaCardRegistro({
                 <th rowSpan={2} className="py-2 px-3 border">Detalle</th>
                 <th rowSpan={2} className="py-2 px-3 border bg-primary-light text-white">Cant. Total</th>
 
-                {/* Columnas visibles solo en escritorio */}
                 <th rowSpan={2} className="py-2 px-3 border hidden md:table-cell">Tipo</th>
                 <th rowSpan={2} className="py-2 px-3 border hidden md:table-cell">Posición</th>
                 <th rowSpan={2} className="py-2 px-3 border hidden md:table-cell">Ø (mm)</th>
@@ -63,7 +92,7 @@ export default function PlanillaCardRegistro({
                 <th rowSpan={2} className="py-2 px-3 border">Fecha</th>
                 <th rowSpan={2} className="py-2 px-3 border">Cantidad</th>
                 <th colSpan={2} className="py-2 px-3 border">Horas</th>
-                <th rowSpan={2} className="py-2 px-3 border">Agregar registro</th>
+                <th rowSpan={2} className="py-2 px-3 border">Temporizador</th>
               </tr>
               <tr className="bg-primary-mid text-white">
                 {horasSub.map((h) => (
@@ -92,7 +121,6 @@ export default function PlanillaCardRegistro({
                             <div className="flex flex-col items-center">
                               {renderEspecificacion()}
 
-                              {/* Toggle solo en móvil */}
                               <button
                                 onClick={() =>
                                   setShowDetails(showDetails === detalle.id_detalle ? null : detalle.id_detalle)
@@ -102,7 +130,6 @@ export default function PlanillaCardRegistro({
                                 {showDetails === detalle.id_detalle ? 'Ocultar detalles' : 'Ver detalles'}
                               </button>
 
-                              {/* Bloque ocultable en móvil */}
                               {showDetails === detalle.id_detalle && (
                                 <div className="mt-2 text-xs text-left space-y-1 w-full md:hidden">
                                   <p><strong>Tipo:</strong> {detalle.tipo}</p>
@@ -118,7 +145,6 @@ export default function PlanillaCardRegistro({
                             {detalle.cantidad_total}
                           </td>
 
-                          {/* Columnas escritorio */}
                           <td rowSpan={registros.length} className="py-2 px-3 border hidden md:table-cell">{detalle.tipo}</td>
                           <td rowSpan={registros.length} className="py-2 px-3 border hidden md:table-cell">{detalle.posicion}</td>
                           <td rowSpan={registros.length} className="py-2 px-3 border hidden md:table-cell">{detalle.medida_diametro}</td>
@@ -133,23 +159,14 @@ export default function PlanillaCardRegistro({
 
                       {idx === 0 && (
                         <td rowSpan={registros.length} className="py-2 px-3 border text-center">
-                          <button
-                            onClick={() =>
-                              setShowModal({
-                                idDetalle: detalle.id_detalle,
-                                idDetalleTarea: tareaObj.id_detalle_tarea,
-                                cantidadTotal: detalle.cantidad_total,
-                              })
-                            }
-                            disabled={!puedeAgregar}
-                            className={`inline-flex items-center justify-center w-12 h-12 rounded-full transition ${
-                              puedeAgregar
-                                ? 'bg-[#1E7F66] text-white hover:bg-[#279974]'
-                                : 'bg-gray-300 text-white cursor-not-allowed'
-                            }`}
-                          >
-                            <PlusCircle size={20} />
-                          </button>
+                          {tareaObj && (
+                            <TimerButton
+                              idDetalle={detalle.id_detalle}
+                              idDetalleTarea={tareaObj.id_detalle_tarea}
+                              idTarea={idTarea}
+                              className={puedeAgregar ? undefined : 'opacity-50 pointer-events-none'}
+                            />
+                          )}
                         </td>
                       )}
                     </tr>
@@ -184,7 +201,6 @@ export default function PlanillaCardRegistro({
                       {detalle.cantidad_total}
                     </td>
 
-                    {/* Columnas escritorio */}
                     <td className="py-2 px-3 border hidden md:table-cell">{detalle.tipo}</td>
                     <td className="py-2 px-3 border hidden md:table-cell">{detalle.posicion}</td>
                     <td className="py-2 px-3 border hidden md:table-cell">{detalle.medida_diametro}</td>
@@ -194,24 +210,16 @@ export default function PlanillaCardRegistro({
                     <td className="py-2 px-3 border">—</td>
                     <td className="py-2 px-3 border">—</td>
                     <td className="py-2 px-3 border">—</td>
+
                     <td className="py-2 px-3 border text-center">
-                      <button
-                        onClick={() =>
-                          setShowModal({
-                            idDetalle: detalle.id_detalle,
-                            idDetalleTarea: tareaObj.id_detalle_tarea,
-                            cantidadTotal: detalle.cantidad_total,
-                          })
-                        }
-                        disabled={detalle.cantidad_total <= 0}
-                        className={`inline-flex items-center justify-center w-12 h-12 rounded-full transition ${
-                          detalle.cantidad_total > 0
-                            ? 'bg-[#1E7F66] text-white hover:bg-[#279974]'
-                            : 'bg-gray-300 text-white cursor-not-allowed'
-                        }`}
-                      >
-                        <PlusCircle size={20} />
-                      </button>
+                      {tareaObj && (
+                        <TimerButton
+                          idDetalle={detalle.id_detalle}
+                          idDetalleTarea={tareaObj.id_detalle_tarea}
+                          idTarea={idTarea}
+                          className={detalle.cantidad_total > 0 ? undefined : 'opacity-50 pointer-events-none'}
+                        />
+                      )}
                     </td>
                   </tr>
                 );
@@ -228,7 +236,10 @@ export default function PlanillaCardRegistro({
           cantidadTotal={showModal.cantidadTotal}
           idTarea={idTarea}
           onClose={() => setShowModal(null)}
-          onSaved={onRegistroGuardado}
+          onSaved={() => {
+            setShowModal(null);
+            onRegistroGuardado();
+          }}
         />
       )}
     </>

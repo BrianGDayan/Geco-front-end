@@ -1,5 +1,6 @@
-import Header from "./header";
+import { TimersProvider } from "@/hooks/useTimers";
 import "./globals.css";
+import Header from "./header";
 import { Inter } from "next/font/google";
 
 const inter = Inter({
@@ -19,10 +20,12 @@ export default function RootLayout({
 }) {
   return (
     <html lang="es" className={inter.variable}>
-      <body className="font-sans bg-gray-bg overflow-x-hidden">
-        <Header />
-        {children}
-      </body>
+     <TimersProvider>
+        <body className="font-sans bg-gray-bg overflow-x-hidden">
+          <Header />
+          {children}
+        </body>
+      </TimersProvider>
     </html>
   );
 }
