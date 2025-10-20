@@ -2,11 +2,7 @@
 
 import React from 'react';
 import useSWR from 'swr';
-import {
-  getPlanillaByNro,
-  getPlanillaCompleta,
-  PlanillaResponse,
-} from '@/lib/planillas';
+import { getPlanillaByNro, getPlanillaCompleta, PlanillaResponse } from '../lib/planillas';
 import AdminHeader from './AdminHeader';
 import AdminTablaRegistro from './AdminTablaRegistro';
 import AdminFooter from './AdminFooter';

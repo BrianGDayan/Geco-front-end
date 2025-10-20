@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { getPlanillasEnCurso, PlanillaSummary } from '@/lib/planillas';
-import PlanillaListEncargado from '@/components/PlanillaListEncargado';
+import { getPlanillasEnCurso, PlanillaSummary } from '../../lib/planillas';
+import PlanillaListEncargado from '../../components/PlanillaListEncargado';
 
 export default function PlanillasPageEncargado() {
   const router = useRouter();

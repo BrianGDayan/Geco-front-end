@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useMemo } from 'react';
-import { PlanillaResponse } from '@/lib/planillas';
+import { PlanillaResponse } from '../lib/planillas';
 
 interface Props {
   planilla: PlanillaResponse;

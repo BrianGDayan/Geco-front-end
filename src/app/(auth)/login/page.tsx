@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { login, LoginDto } from "@/lib/auth";
+import { login, LoginDto } from "../../../lib/auth";
 import ModalError from "./ModalError";
 
 export default function Login() {

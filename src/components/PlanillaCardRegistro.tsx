@@ -2,11 +2,11 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import { CheckCircle } from 'lucide-react';
-import TimerButton from '@/components/TimerButton';
-import { DetalleResponse, RegistroResponse } from '@/lib/planillas';
+import TimerButton from '../components/TimerButton';
+import { DetalleResponse, RegistroResponse } from '../lib/planillas';
 import RegistroModal from './RegistroModal';
-import EspecificacionImagen from '@/components/EspecificacionImagen';
-import { useTimers } from '@/hooks/useTimers';
+import EspecificacionImagen from '../components/EspecificacionImagen';
+import { useTimers } from '../hooks/useTimers';
 
 function highlight(field: string, camposModificados?: string[]) {
   return camposModificados?.includes(field) ? 'border-2 border-red-500' : '';

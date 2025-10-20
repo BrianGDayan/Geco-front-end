@@ -2,8 +2,8 @@
 
 import { use, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { getPlanillasCompletadas, getPlanillasEnCurso, PlanillaSummary } from '@/lib/planillas';
-import PlanillaListAdmin from '@/components/PlanillaListAdmin';
+import { getPlanillasCompletadas, getPlanillasEnCurso, PlanillaSummary } from '../../../../lib/planillas';
+import PlanillaListAdmin from '../../../../components/PlanillaListAdmin';
 import { motion } from 'framer-motion';
 
 const variants = {

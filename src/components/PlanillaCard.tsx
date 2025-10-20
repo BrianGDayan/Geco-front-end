@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Trash2 } from 'lucide-react';
-import { DeletePlanilla, PlanillaSummary } from '@/lib/planillas';
+import { DeletePlanilla, PlanillaSummary } from '../lib/planillas';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface PlanillaCardProps {

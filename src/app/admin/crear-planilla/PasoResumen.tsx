@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from "react";
-import { CreatePlanilla, PlanillaDto } from "@/lib/planillas";
+import { CreatePlanilla, PlanillaDto } from "../../../lib/planillas";
 import { useRouter } from "next/navigation";
 
 interface PasoResumenProps {

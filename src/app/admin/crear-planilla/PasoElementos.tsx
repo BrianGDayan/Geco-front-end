@@ -1,10 +1,10 @@
 'use client';
 
 import useSWR from 'swr';
-import { ElementoDto, DetalleDto, getDiametros } from "@/lib/planillas";
+import { ElementoDto, DetalleDto, getDiametros } from "../../../lib/planillas";
 import { useEffect, useState } from "react";
 import { PlusCircle, Trash2, ChevronDown, ChevronUp } from "lucide-react";
-import { uploadEspecificacion } from "@/lib/planillas";
+import { uploadEspecificacion } from "../../../lib/planillas";
 import { CldImage } from "next-cloudinary";
 
 interface PasoElementosProps {

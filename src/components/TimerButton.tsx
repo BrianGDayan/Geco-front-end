@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { useTimers } from '@/hooks/useTimers';
+import { useTimers } from '../hooks/useTimers';
 
 interface Props {
   idDetalleTarea: number;

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { Listbox } from "@headlessui/react";
 import clsx from "clsx";
-import { getObras, getRendimientosPorObra } from "@/lib/planillas";
+import { getObras, getRendimientosPorObra } from "../../lib/planillas";
 
 interface Rendimientos {
   rendimiento_global_corte_trabajador: number | null;

@@ -1,8 +1,8 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import PlanillaCard from '@/components/PlanillaCard';
-import { PlanillaSummary } from '@/lib/planillas';
+import PlanillaCard from '../components/PlanillaCard';
+import { PlanillaSummary } from '../lib/planillas';
 
 interface Props {
   planillas: PlanillaSummary[];

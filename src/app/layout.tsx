@@ -1,4 +1,4 @@
-import { TimersProvider } from "@/hooks/useTimers";
+import { TimersProvider } from "../hooks/useTimers";
 import "./globals.css";
 import Header from "./header";
 import { Inter } from "next/font/google";

@@ -2,8 +2,8 @@
 
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { getPlanillaByNro, PlanillaResponse } from '@/lib/planillas';
-import RegistroVista from '@/components/RegistroVista';
+import { getPlanillaByNro, PlanillaResponse } from "../../../../../lib/planillas";
+import RegistroVista from '../../../../../components/RegistroVista';
 import { ChevronLeft } from 'lucide-react';
 
 interface Props {

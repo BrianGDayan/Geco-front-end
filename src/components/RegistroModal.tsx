@@ -4,9 +4,9 @@ import React, { useEffect, useState, Fragment } from 'react';
 import useSWR from 'swr';
 import { Dialog, Combobox, Transition } from '@headlessui/react';
 import { ChevronUpDownIcon, CheckIcon } from '@heroicons/react/20/solid';
-import { getTrabajadoresActivos, TrabajadorActivo } from '@/lib/trabajadores';
-import { CreateRegistro } from '@/lib/registros';
-import { useTimers, secToTimeHHMM } from '@/hooks/useTimers';
+import { getTrabajadoresActivos, TrabajadorActivo } from '../lib/trabajadores';
+import { CreateRegistro } from '../lib/registros';
+import { useTimers, secToTimeHHMM } from '../hooks/useTimers';
 
 interface Props {
   idDetalle: number;

@@ -1,9 +1,9 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { PlanillaResponse, DetalleResponse, RegistroResponse, UpdateDetalle, updateDetallesBatch, uploadEspecificacion } from '@/lib/planillas';
-import type { UpdateDetalleDto } from '@/lib/planillas';
-import EspecificacionImagen from '@/components/EspecificacionImagen';
+import { PlanillaResponse, DetalleResponse, RegistroResponse, UpdateDetalle, updateDetallesBatch, uploadEspecificacion } from '../lib/planillas';
+import type { UpdateDetalleDto } from '../lib/planillas';
+import EspecificacionImagen from '../components/EspecificacionImagen';
 
 function highlight(field: string, camposModificados?: string[]) {
   return camposModificados?.includes(field)

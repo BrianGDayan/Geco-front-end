@@ -1,6 +1,6 @@
 'use client';
 
-import { PlanillaDto } from "@/lib/planillas";
+import { PlanillaDto } from "../../../lib/planillas";
 import { ChangeEvent, useState } from "react";
 
 interface PasoCabeceraProps {

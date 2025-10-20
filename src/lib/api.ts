@@ -1,4 +1,3 @@
-// lib/api.ts
 const PROD_BASE = process.env.NEXT_PUBLIC_API_URL;
 const BASE_URL = PROD_BASE ? `${PROD_BASE}/api` : "/api";
 

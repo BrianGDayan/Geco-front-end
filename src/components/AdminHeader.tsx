@@ -1,6 +1,6 @@
 'use client';
 import React from 'react';
-import { PlanillaResponse } from '@/lib/planillas';
+import { PlanillaResponse } from '../lib/planillas';
 
 interface Props {
   planilla: PlanillaResponse;

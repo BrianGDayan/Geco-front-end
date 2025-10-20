@@ -2,8 +2,8 @@
 
 import { use, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { getPlanillaByNro, PlanillaResponse } from '@/lib/planillas';
-import AdminVista from '@/components/AdminVista';
+import { getPlanillaByNro, PlanillaResponse } from "../../../../../../../lib/planillas";
+import AdminVista from '../../../../../../../components/AdminVista';
 
 interface Props {
   params: Promise<{
@@ -13,7 +13,7 @@ interface Props {
 }
 
 export default function AdminVerDatosPage({ params }: Props) {
-  const { nroPlanilla, idTarea } = use(params); // <- aquí usamos use()
+  const { nroPlanilla, idTarea } = use(params); 
 
   const router = useRouter();
   const [planilla, setPlanilla] = useState<PlanillaResponse | null>(null);

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import PasoCabecera from "./PasoCabecera";
 import PasoResumen from "./PasoResumen";
-import { PlanillaDto, ElementoDto, DetalleDto } from "@/lib/planillas";
+import { PlanillaDto, ElementoDto, DetalleDto } from "../../../lib/planillas";
 import { AnimatePresence, motion } from "framer-motion";
 import PasoElementos from "./PasoElementos";
 import * as XLSX from "xlsx";
