@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
+import { CheckCircle } from 'lucide-react';
 import TimerButton from '@/components/TimerButton';
 import { DetalleResponse, RegistroResponse } from '@/lib/planillas';
 import RegistroModal from './RegistroModal';
@@ -37,7 +38,6 @@ export default function PlanillaCardRegistro({
   const prevRunningRef = useRef<Record<number, boolean>>({});
 
   useEffect(() => {
-    // build lookup of timers for faster access
     const lookup = timers || {};
     detalles.forEach((detalle) => {
       const tareaObj = detalle.detalle_tarea[0];
@@ -46,9 +46,8 @@ export default function PlanillaCardRegistro({
       const prevRunning = prevRunningRef.current[key];
       const timer = lookup[key];
 
-      // if previously running and now stopped, open modal (only if not already open)
+      // si pasó de corriendo -> detenido, abrimos modal
       if (prevRunning === true && timer && timer.running === false && timer.stoppedAt) {
-        // avoid opening modal if one is already open for same detalle
         if (!showModal || showModal.idDetalleTarea !== key) {
           setShowModal({
             idDetalle: detalle.id_detalle,
@@ -58,7 +57,6 @@ export default function PlanillaCardRegistro({
         }
       }
 
-      // update prevRunningRef
       prevRunningRef.current[key] = !!(timer && timer.running);
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -160,12 +158,15 @@ export default function PlanillaCardRegistro({
                       {idx === 0 && (
                         <td rowSpan={registros.length} className="py-2 px-3 border text-center">
                           {tareaObj && (
-                            <TimerButton
-                              idDetalle={detalle.id_detalle}
-                              idDetalleTarea={tareaObj.id_detalle_tarea}
-                              idTarea={idTarea}
-                              className={puedeAgregar ? undefined : 'opacity-50 pointer-events-none'}
-                            />
+                            !puedeAgregar ? (
+                              <CheckCircle className="w-6 h-6 text-green-600 mx-auto" />
+                            ) : (
+                              <TimerButton
+                                idDetalle={detalle.id_detalle}
+                                idDetalleTarea={tareaObj.id_detalle_tarea}
+                                idTarea={idTarea}
+                              />
+                            )
                           )}
                         </td>
                       )}
@@ -213,12 +214,15 @@ export default function PlanillaCardRegistro({
 
                     <td className="py-2 px-3 border text-center">
                       {tareaObj && (
-                        <TimerButton
-                          idDetalle={detalle.id_detalle}
-                          idDetalleTarea={tareaObj.id_detalle_tarea}
-                          idTarea={idTarea}
-                          className={detalle.cantidad_total > 0 ? undefined : 'opacity-50 pointer-events-none'}
-                        />
+                        !puedeAgregar ? (
+                          <CheckCircle className="w-6 h-6 text-green-600 mx-auto" />
+                        ) : (
+                          <TimerButton
+                            idDetalle={detalle.id_detalle}
+                            idDetalleTarea={tareaObj.id_detalle_tarea}
+                            idTarea={idTarea}
+                          />
+                        )
                       )}
                     </td>
                   </tr>

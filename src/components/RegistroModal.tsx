@@ -356,18 +356,6 @@ export default function RegistroModal({
                 <label className="block text-sm font-medium mb-1">Fin – {label1}</label>
                 <input type="time" value={fin1} onChange={e => setFin1(e.target.value)} className="rounded border px-3 py-2" />
               </div>
-
-              <div className="flex flex-col items-end">
-                {/* Botones temporizador local */}
-                <div className="mb-1">
-                  {timer?.running ? (
-                    <button type="button" onClick={handleStop} className="px-3 py-2 bg-red-600 text-white rounded">Detener</button>
-                  ) : (
-                    <button type="button" onClick={handleStart} className="px-3 py-2 bg-green-600 text-white rounded">Iniciar</button>
-                  )}
-                </div>
-
-              </div>
             </div>
 
             {errorHoras1 && <p className="text-red-600 text-sm mt-1">{errorHoras1}</p>}
