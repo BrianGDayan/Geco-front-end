@@ -6,11 +6,14 @@ export type TimerEntry = {
   idDetalleTarea: number;
   idDetalle: number;
   idTarea: number;
-  startedAt: string | null; // ISO
-  stoppedAt: string | null; // ISO
+  startedAt: string | null;
+  stoppedAt: string | null;
   running: boolean;
-  meta?: { nombre1?: string; nombre2?: string; cantidad?: number };
-  elapsedSec?: number; 
+  meta?: {
+    nombre?: string;
+    idTrabajador?: number;
+  };
+  elapsedSec?: number;
 };
 
 type TimersContextType = {

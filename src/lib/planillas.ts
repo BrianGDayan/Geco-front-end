@@ -37,20 +37,37 @@ export interface PlanillaDto {
   elemento: ElementoDto[];
 }
 
+export interface RegistroOperadorResponse {
+  id_registro_operador: number;
+  tiempo_horas: number;
+  cantidad_unidades: number | null;
+  rendimiento: number | null;
+  trabajador: {
+    id_trabajador: number;
+    nombre: string;
+  };
+}
+
 export interface RegistroResponse {
   id_registro: number;
   cantidad: number;
-  fecha: Date;
+  fecha: string; 
   horas_trabajador: number;
-  horas_ayudante: number;
+  horas_ayudante: number | null;
+  horas_ayudante2: number | null;
+
   rendimiento_trabajador: number;
-  rendimiento_ayudante: number;
+  rendimiento_ayudante: number | null;
+  rendimiento_ayudante2: number | null;
+
   trabajador: {
     nombre: string;
   };
   ayudante: {
     nombre: string;
   } | null;
+
+  operadores?: RegistroOperadorResponse[];
 }
 
 
@@ -63,7 +80,6 @@ export interface DetalleTareaResponse {
   };
   registro: RegistroResponse[];
 }
-
 
 export interface DetalleResponse {
   id_detalle: number;
@@ -106,6 +122,7 @@ export interface PlanillaResponse {
   rendimiento_global_empaquetado_trabajador: number;
   rendimiento_global_corte_ayudante: number;
   rendimiento_global_doblado_ayudante: number;
+  rendimiento_global_doblado_ayudante2: number;
   rendimiento_global_empaquetado_ayudante: number;
   elemento: ElementoResponse[];
 }
@@ -135,8 +152,10 @@ export interface RendimientosPromedio {
   rendimiento_global_empaquetado_trabajador: number | null;
   rendimiento_global_corte_ayudante: number | null;
   rendimiento_global_doblado_ayudante: number | null;
+  rendimiento_global_doblado_ayudante2: number | null;
   rendimiento_global_empaquetado_ayudante: number | null;
 }
+
 
 export interface BatchUpdate {
   idDetalle: number;

@@ -42,45 +42,81 @@ export default function PlanillaCard({
 
   return (
     <div className="border rounded-lg bg-white shadow overflow-hidden relative">
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 text-center text-sm">
-        <div className="p-3 border-r flex flex-col items-center justify-center">
-          <span className="font-semibold">Planilla N°:</span>
-          <span>{planilla.nro_planilla}</span>
-        </div>
-        <div className="p-3 border-r">
-          <span className="block font-semibold">Obra:</span>
-          {planilla.obra}
-        </div>
-        <div className="p-3 border-r">
-          <span className="block font-semibold">Progreso:</span>
-          <span
-            className={
-              planilla.progreso === 100
-                ? 'text-green-600'
-                : 'text-yellow-600'
-            }
-          >
-            {planilla.progreso}%
-          </span>
-        </div>
-        <div className="p-3 border-r">
-          <span className="block font-semibold">Sector:</span>
-          {planilla.sector}
-        </div>
-        <div className="p-3 border-r">
-          <span className="block font-semibold">Plano Nº:</span>
-          {planilla.nro_plano}
-        </div>
-        <div className="p-3">
-          <span className="block font-semibold">Fecha:</span>
-          {planilla.fecha.toLocaleDateString('es-ES', {
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric',
-          })}
-        </div>
-      </div>
 
+      {/* ------------------------- */}
+      {/* ENCABEZADO (condicional) */}
+      {/* ------------------------- */}
+      {modo === 'admin' ? (
+        /* *** VERSIÓN ADMIN (completa) *** */
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 text-center text-sm">
+
+          <div className="p-3 border-r flex flex-col items-center justify-center">
+            <span className="font-semibold">Planilla N°:</span>
+            <span>{planilla.nro_planilla}</span>
+          </div>
+
+          <div className="p-3 border-r">
+            <span className="block font-semibold">Obra:</span>
+            {planilla.obra}
+          </div>
+
+          <div className="p-3 border-r">
+            <span className="block font-semibold">Progreso:</span>
+            <span
+              className={
+                planilla.progreso === 100 ? 'text-green-600' : 'text-yellow-600'
+              }
+            >
+              {planilla.progreso}%
+            </span>
+          </div>
+
+          <div className="p-3 border-r">
+            <span className="block font-semibold">Sector:</span>
+            {planilla.sector}
+          </div>
+
+          <div className="p-3 border-r">
+            <span className="block font-semibold">Plano Nº:</span>
+            {planilla.nro_plano}
+          </div>
+
+          <div className="p-3">
+            <span className="block font-semibold">Fecha:</span>
+            {planilla.fecha.toLocaleDateString('es-ES')}
+          </div>
+        </div>
+      ) : (
+        /* *** VERSIÓN ENCARGADO (reducida) *** */
+        <div className="grid grid-cols-1 sm:grid-cols-3 text-center text-sm">
+
+          <div className="p-3 border-r flex flex-col items-center justify-center">
+            <span className="font-semibold">Planilla N°:</span>
+            <span>{planilla.nro_planilla}</span>
+          </div>
+
+          <div className="p-3 border-r">
+            <span className="block font-semibold">Obra:</span>
+            {planilla.obra}
+          </div>
+
+          <div className="p-3">
+            <span className="block font-semibold">Progreso:</span>
+            <span
+              className={
+                planilla.progreso === 100 ? 'text-green-600' : 'text-yellow-600'
+              }
+            >
+              {planilla.progreso}%
+            </span>
+          </div>
+
+        </div>
+      )}
+
+      {/* ------------------------- */}
+      {/*     BOTONES Y ACCIONES    */}
+      {/* ------------------------- */}
       <div className="flex flex-col sm:flex-row flex-wrap gap-4 bg-gray-100 px-4 py-4">
         <button
           onClick={() => onCorte?.(planilla.nro_planilla)}
@@ -88,18 +124,21 @@ export default function PlanillaCard({
         >
           {textoCorte}
         </button>
+
         <button
           onClick={() => onDoblado?.(planilla.nro_planilla)}
           className="flex-1 px-4 py-2 bg-[#1E7F66] text-white rounded hover:bg-green-700 transition text-center"
         >
           {textoDoblado}
         </button>
+
         <button
           onClick={() => onEmpaque?.(planilla.nro_planilla)}
           className="flex-1 px-4 py-2 bg-[#6A1B4D] text-white rounded hover:bg-pink-800 transition text-center"
         >
           {textoEmpaque}
         </button>
+
         {mostrarEliminar && (
           <button
             onClick={() => setShowConfirm(true)}
@@ -111,7 +150,9 @@ export default function PlanillaCard({
         )}
       </div>
 
-      {/* Modal de confirmación */}
+      {/* ------------------------- */}
+      {/*   MODAL ELIMINAR         */}
+      {/* ------------------------- */}
       <AnimatePresence>
         {showConfirm && (
           <motion.div
@@ -128,12 +169,11 @@ export default function PlanillaCard({
               exit={{ scale: 0.9, opacity: 0 }}
               transition={{ duration: 0.25 }}
             >
-              <h2 className="text-lg font-semibold mb-4">
-                Confirmar eliminación
-              </h2>
+              <h2 className="text-lg font-semibold mb-4">Confirmar eliminación</h2>
               <p className="mb-6">
                 ¿Deseas eliminar la planilla {planilla.nro_planilla}?
               </p>
+
               <div className="flex justify-end gap-4">
                 <button
                   onClick={() => setShowConfirm(false)}
@@ -141,6 +181,7 @@ export default function PlanillaCard({
                 >
                   Cancelar
                 </button>
+
                 <button
                   onClick={handleDelete}
                   className="px-4 py-2 rounded bg-red-600 text-white hover:bg-red-700 transition"
@@ -152,6 +193,8 @@ export default function PlanillaCard({
           </motion.div>
         )}
       </AnimatePresence>
+
     </div>
   );
 }
+

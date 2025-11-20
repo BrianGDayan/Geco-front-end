@@ -3,7 +3,8 @@
 import { useState, useEffect } from "react";
 import { Listbox } from "@headlessui/react";
 import clsx from "clsx";
-import { getRendimientosPorTarea } from "../../lib/trabajadores"; 
+import { getRendimientosPorTarea } from "../../lib/trabajadores";
+import { fetcher } from "../../lib/api";
 
 interface TrabajadorPerformance {
   id: number;
@@ -20,11 +21,24 @@ const tareas = [
 export default function SelectorDeTareas() {
   const [tareaSeleccionada, setTareaSeleccionada] = useState<number | null>(null);
   const [rendimientos, setRendimientos] = useState<TrabajadorPerformance[]>([]);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (tareaSeleccionada !== null) {
-      getRendimientosPorTarea(tareaSeleccionada)
-        .then((data) => setRendimientos(data))
+      setLoading(true);
+
+      // 1) Primero recalcular rendimientos en backend
+      fetcher("/trabajadores/actualizar-rendimientos", { method: "POST" })
+        .then(() => {
+          // 2) Luego consultar rendimientos ya recalculados
+          return getRendimientosPorTarea(tareaSeleccionada);
+        })
+        .then((data) => {
+          setRendimientos(data);
+        })
+        .finally(() => {
+          setLoading(false);
+        });
     } else {
       setRendimientos([]);
     }
@@ -61,6 +75,11 @@ export default function SelectorDeTareas() {
           </Listbox.Options>
         </div>
       </Listbox>
+
+      {/* Loading */}
+      {loading && (
+        <p className="text-gray-600 text-sm italic">Actualizando rendimientos...</p>
+      )}
 
       {/* Tabla de resultados */}
       <table className="table-auto border w-96 bg-white">

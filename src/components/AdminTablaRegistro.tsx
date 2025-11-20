@@ -31,7 +31,6 @@ interface EditDetalle {
 }
 
 export default function AdminTablaRegistro({ planilla, detalles, idTarea, onSave }: Props) {
-
   const [editDetalles, setEditDetalles] = useState<Record<number, EditDetalle>>({});
   const fileInputs = React.useRef<Record<number, HTMLInputElement>>({}).current;
   const [isSaving, setIsSaving] = useState(false);
@@ -68,54 +67,64 @@ export default function AdminTablaRegistro({ planilla, detalles, idTarea, onSave
     }));
   };
 
-const handleGuardarCambios = async () => {
-  setIsSaving(true);
-  setError(null);
+  const handleGuardarCambios = async () => {
+    setIsSaving(true);
+    setError(null);
 
-  try {
-    const updates = detalles
-      .filter(d => {
-        const upd = editDetalles[d.id_detalle];
-        return (
-          upd.especificacion   !== d.especificacion ||
-          upd.posicion         !== d.posicion       ||
-          parseInt(upd.tipo)   !== parseInt(String(d.tipo)) ||
-          parseFloat(upd.longitud_corte)  !== d.longitud_corte ||
-          parseFloat(upd.medida_diametro) !== d.medida_diametro ||
-          parseFloat(upd.cantidad_total)  !== d.cantidad_total
-        );
-      })
-      .map(d => ({
-        idDetalle: d.id_detalle,
-        updateDetalleDto: {
-          especificacion:  editDetalles[d.id_detalle]?.especificacion || '',
-          posicion:        editDetalles[d.id_detalle]?.posicion       || '',
-          tipo:            parseInt(editDetalles[d.id_detalle]?.tipo || '0', 10),
-          longitudCorte:   parseFloat(editDetalles[d.id_detalle]?.longitud_corte || '0'),
-          medidaDiametro:  parseFloat(editDetalles[d.id_detalle]?.medida_diametro || '0'),
-          cantidadTotal:   parseFloat(editDetalles[d.id_detalle]?.cantidad_total  || '0'),
-        } as UpdateDetalleDto,
-      }));
+    try {
+      const updates = detalles
+        .filter(d => {
+          const upd = editDetalles[d.id_detalle];
+          return (
+            upd.especificacion   !== d.especificacion ||
+            upd.posicion         !== d.posicion       ||
+            parseInt(upd.tipo)   !== parseInt(String(d.tipo)) ||
+            parseFloat(upd.longitud_corte)  !== d.longitud_corte ||
+            parseFloat(upd.medida_diametro) !== d.medida_diametro ||
+            parseFloat(upd.cantidad_total)  !== d.cantidad_total
+          );
+        })
+        .map(d => ({
+          idDetalle: d.id_detalle,
+          updateDetalleDto: {
+            especificacion:  editDetalles[d.id_detalle]?.especificacion || '',
+            posicion:        editDetalles[d.id_detalle]?.posicion       || '',
+            tipo:            parseInt(editDetalles[d.id_detalle]?.tipo || '0', 10),
+            longitudCorte:   parseFloat(editDetalles[d.id_detalle]?.longitud_corte || '0'),
+            medidaDiametro:  parseFloat(editDetalles[d.id_detalle]?.medida_diametro || '0'),
+            cantidadTotal:   parseFloat(editDetalles[d.id_detalle]?.cantidad_total  || '0'),
+          } as UpdateDetalleDto,
+        }));
 
-  if (updates.length > 0) {
-      const nro = planilla.nro_planilla.trim();
-      await updateDetallesBatch(nro, updates);
+      if (updates.length > 0) {
+        const nro = planilla.nro_planilla.trim();
+        await updateDetallesBatch(nro, updates);
+      }
+      await onSave();
+    } catch (e: any) {
+      setError(e.message || 'Error guardando cambios');
+    } finally {
+      setIsSaving(false);
     }
-    await onSave();
-  } catch (e: any) {
-    setError(e.message || 'Error guardando cambios');
-  } finally {
-    setIsSaving(false);
-  }
-};
+  };
 
+  // Cabeceras dinámicas según tarea
+  const horasCols =
+    idTarea === 1
+      ? ['Cort.1', 'Cort.2']
+      : idTarea === 2
+        ? ['Dob.', 'Ayu.1', 'Ayu.2']
+        : ['Emp.1', 'Emp.2'];
 
-  const horasCols = idTarea === 1
-    ? ['Cort.1', 'Cort.2']
-    : idTarea === 2
-      ? ['Dob.', 'Ayu.']
-      : ['Emp.1', 'Emp.2'];
   const rendCols = horasCols;
+  const colsDespuesCantidad = 1 + horasCols.length + rendCols.length; // Fecha + horas + rendimientos
+
+  const getOperadoresOrdenados = (r: RegistroResponse) => {
+    const ops = r.operadores ?? [];
+    return [...ops].sort(
+      (a, b) => a.id_registro_operador - b.id_registro_operador
+    );
+  };
 
   return (
     <div className="overflow-x-auto bg-white rounded-lg shadow mb-6">
@@ -130,199 +139,186 @@ const handleGuardarCambios = async () => {
             <th rowSpan={2} className="py-2 px-3 border">Long. Corte (m)</th>
             <th rowSpan={2} className="py-2 px-3 border bg-primary-light text-white">Cant. Total</th>
             <th rowSpan={2} className="py-2 px-3 border">Fecha</th>
-            <th colSpan={2} className="py-2 px-3 border">Horas</th>
-            <th colSpan={2} className="py-2 px-3 border">Rendimiento</th>
+            <th colSpan={horasCols.length} className="py-2 px-3 border">Horas</th>
+            <th colSpan={rendCols.length} className="py-2 px-3 border">Rendimiento</th>
           </tr>
           <tr className="bg-primary-dark text-white">
-            {horasCols.map(h => <th key={h} className="py-1 px-3 border text-xs">{h}</th>)}
-            {rendCols.map(r => <th key={r} className="py-1 px-3 border text-xs">{r}</th>)}
+            {horasCols.map(h => (
+              <th key={h} className="py-1 px-3 border text-xs">{h}</th>
+            ))}
+            {rendCols.map(r => (
+              <th key={r} className="py-1 px-3 border text-xs">{r}</th>
+            ))}
           </tr>
         </thead>
         <tbody>
           {detalles.map(d => {
-            const tareaName = idTarea === 1 ? 'Corte' : idTarea === 2 ? 'Doblado' : 'Empaquetado';
-            const tareaObj = d.detalle_tarea.find(dt => dt.tarea.nombre_tarea === tareaName);
+            const tipoNum = Number(d.tipo);
+
+            const tareaName =
+              idTarea === 1 ? "Corte" :
+              idTarea === 2 ? "Doblado" :
+              "Empaquetado";
+
+            const tareaObj = d.detalle_tarea.find(
+              dt => dt.tarea.nombre_tarea === tareaName
+            );
+
             const registros: RegistroResponse[] = tareaObj?.registro ?? [];
             const rowSpan = registros.length || 1;
+
+            // reglas de NO CORRESPONDE
+            const noDoblado = idTarea === 2 && tipoNum === 1;
+            const noEmpaquetado = idTarea === 3 && tipoNum === 4;
+            const mostrarNoCorresponde = noDoblado || noEmpaquetado;
+
             if (registros.length > 0) {
               return registros.map((r, idx) => (
                 <tr key={r.id_registro} className="border-t">
+
                   {idx === 0 && (
                     <>
-                      <td rowSpan={rowSpan} className="py-2 px-3 border text-center">{d.nombre_elemento}</td>
-                      <td rowSpan={rowSpan} className={`py-2 px-3 border relative ${highlight('especificacion', d.campos_modificados)}`}>
-                        <EspecificacionImagen publicId={d.especificacion} width={200} height={200} alt={`Detalle ${d.id_detalle}`} />
-                        {enCurso && (
-                          <>
-                            <button
-                              onClick={() => fileInputs[d.id_detalle].click()}
-                              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                              title="Cambiar especificación"
-                            />
-                            <input
-                              type="file"
-                              accept="image/*"
-                              ref={el => { if (el) fileInputs[d.id_detalle] = el; }}
-                              style={{ display: 'none' }}
-                              onChange={async e => {
-                                const file = e.target.files?.[0];
-                                if (!file) return;
-                                try {
-                                  const oldId = d.especificacion || undefined;
-                                  const { publicId } = await uploadEspecificacion(file, oldId);
-                                  await UpdateDetalle(d.id_detalle, { especificacion: publicId });
-                                  handleFieldChange(d.id_detalle, 'especificacion', publicId);
-                                } catch {
-                                  window.alert('Error al subir la imagen. Por favor intenta de nuevo.');
-                                }
-                              }}
-                            />
-                          </>
-                        )}
+                      <td rowSpan={rowSpan} className="py-2 px-3 border text-center">
+                        {d.nombre_elemento}
                       </td>
-                      <td rowSpan={rowSpan} className={`py-2 px-3 border ${highlight('posicion', d.campos_modificados)}`}>
-                        <input
-                          type="text"
-                          value={editDetalles[d.id_detalle]?.posicion || ''}
-                          onChange={e => handleFieldChange(d.id_detalle, 'posicion', e.target.value)}
-                          disabled={!enCurso}
-                          className="w-full border rounded px-1 py-0.5 text-sm"
+
+                      <td rowSpan={rowSpan} className={`py-2 px-3 border relative ${highlight("especificacion", d.campos_modificados)}`}>
+                        <EspecificacionImagen
+                          publicId={d.especificacion}
+                          width={200}
+                          height={200}
+                          alt={`Detalle ${d.id_detalle}`}
                         />
                       </td>
-                      <td rowSpan={rowSpan} className={`py-2 px-3 border ${highlight('tipo', d.campos_modificados)}`}>
-                        <input
-                          type="number"
-                          value={editDetalles[d.id_detalle]?.tipo || ''}
-                          onChange={e => handleFieldChange(d.id_detalle, 'tipo', +e.target.value)}
-                          disabled={!enCurso}
-                          className="w-full border rounded px-1 py-0.5 text-sm"
-                          step="1"
-                        />
+
+                      <td rowSpan={rowSpan} className={`py-2 px-3 border ${highlight("posicion", d.campos_modificados)}`}>
+                        {d.posicion}
                       </td>
-                      <td rowSpan={rowSpan} className={`py-2 px-3 border ${highlight('medida_diametro', d.campos_modificados)}`}>
-                        <input
-                          type="number"
-                          value={editDetalles[d.id_detalle]?.medida_diametro || ''}
-                          onChange={e => handleFieldChange(d.id_detalle, 'medida_diametro', +e.target.value)}
-                          disabled={!enCurso}
-                          className="w-full border rounded px-1 py-0.5 text-sm"
-                          step="1"
-                        />
+
+                      <td rowSpan={rowSpan} className={`py-2 px-3 border ${highlight("tipo", d.campos_modificados)}`}>
+                        {d.tipo}
                       </td>
-                      <td rowSpan={rowSpan} className={`py-2 px-3 border ${highlight('longitud_corte', d.campos_modificados)}`}>
-                        <input
-                          type="number"
-                          value={editDetalles[d.id_detalle]?.longitud_corte || ''}
-                          onChange={e => handleFieldChange(d.id_detalle, 'longitud_corte', +e.target.value)}
-                          disabled={!enCurso}
-                          className="w-full border rounded px-1 py-0.5 text-sm"
-                          step="0.01"
-                        />
+
+                      <td rowSpan={rowSpan} className={`py-2 px-3 border ${highlight("medida_diametro", d.campos_modificados)}`}>
+                        {d.medida_diametro}
                       </td>
-                      <td rowSpan={rowSpan} className={`py-2 px-3 border border-r-2 bg-primary-light text-gray-900 font-semibold ${highlight('cantidad_total', d.campos_modificados)}`}>
-                        <input
-                          type="number"
-                          value={editDetalles[d.id_detalle]?.cantidad_total || ''}
-                          onChange={e => handleFieldChange(d.id_detalle, 'cantidad_total', +e.target.value)}
-                          disabled={!enCurso}
-                          className="w-full border rounded px-1 py-0.5 text-sm bg-white"
-                          step="1"
-                        />
+
+                      <td rowSpan={rowSpan} className={`py-2 px-3 border ${highlight("longitud_corte", d.campos_modificados)}`}>
+                        {d.longitud_corte}
+                      </td>
+
+                      <td
+                        rowSpan={rowSpan}
+                        className={`py-2 px-3 border border-r-2 bg-primary-light text-white font-semibold ${highlight("cantidad_total", d.campos_modificados)}`}
+                      >
+                        {d.cantidad_total}
                       </td>
                     </>
                   )}
-                  <td className="py-2 px-3 border">{new Date(r.fecha).toLocaleDateString('es-ES')}</td>
-                  <td className="py-2 px-3 border">{r.horas_trabajador}</td>
-                  <td className="py-2 px-3 border">{r.horas_ayudante}</td>
-                  <td className="py-2 px-3 border">{r.rendimiento_trabajador.toFixed(2)}</td>
-                  <td className="py-2 px-3 border">{r.rendimiento_ayudante.toFixed(2)}</td>
+
+                  {/* FECHA */}
+                  <td className="py-2 px-3 border">
+                    {new Date(r.fecha).toLocaleDateString("es-ES")}
+                  </td>
+
+                  {/* HORAS / NO CORRESPONDE */}
+                  {mostrarNoCorresponde ? (
+                    <>
+                      <td className="py-2 px-3 border text-center italic text-gray-500" colSpan={idTarea === 2 ? 3 : 2}>
+                        NO CORRESPONDE
+                      </td>
+                    </>
+                  ) : (
+                    <>
+                      <td className="py-2 px-3 border">{r.horas_trabajador}</td>
+                      <td className="py-2 px-3 border">{r.horas_ayudante ?? "-"}</td>
+
+                      {/* Ayudante 2 solo en Doblado */}
+                      {idTarea === 2 && (
+                        <td className="py-2 px-3 border">
+                          {r.horas_ayudante2 ?? "-"}
+                        </td>
+                      )}
+                    </>
+                  )}
+
+                  {/* RENDIMIENTOS / NO CORRESPONDE */}
+                  {mostrarNoCorresponde ? (
+                    <td className="py-2 px-3 border text-center italic text-gray-500" colSpan={idTarea === 2 ? 3 : 2}>
+                      NO CORRESPONDE
+                    </td>
+                  ) : (
+                    <>
+                      <td className="py-2 px-3 border">{r.rendimiento_trabajador.toFixed(3)}</td>
+                      <td className="py-2 px-3 border">
+                        {r.rendimiento_ayudante != null ? r.rendimiento_ayudante.toFixed(3) : "-"}
+                      </td>
+
+                      {/* Ayudante2 solo en doblado */}
+                      {idTarea === 2 && (
+                        <td className="py-2 px-3 border">
+                          {r.rendimiento_ayudante2 != null ? r.rendimiento_ayudante2.toFixed(3) : "-"}
+                        </td>
+                      )}
+                    </>
+                  )}
+
                 </tr>
               ));
             }
 
+            // FILA SIN REGISTROS
             return (
-              <tr key={`d-${d.id_detalle}`} className="border-t">
+              <tr key={`empty-${d.id_detalle}`} className="border-t">
+
                 <td className="py-2 px-3 border text-center">{d.nombre_elemento}</td>
-                <td rowSpan={rowSpan} className={`py-2 px-3 border relative ${highlight('especificacion', d.campos_modificados)}`}>
-                  <EspecificacionImagen publicId={d.especificacion} width={200} height={200} alt={`Detalle ${d.id_detalle}`} />
-                    {enCurso && (
-                      <>
-                        <button
-                          onClick={() => fileInputs[d.id_detalle].click()}
-                          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                          title="Cambiar especificación"
-                        />
-                        <input
-                          type="file"
-                          accept="image/*"
-                          ref={el => { if (el) fileInputs[d.id_detalle] = el; }}
-                          style={{ display: 'none' }}
-                          onChange={async e => {
-                            const file = e.target.files?.[0];
-                            if (!file) return;
-                            try {
-                              const oldId = d.especificacion || undefined;
-                              const { publicId } = await uploadEspecificacion(file, oldId);
-                              await UpdateDetalle(d.id_detalle, { especificacion: publicId });
-                              handleFieldChange(d.id_detalle, 'especificacion', publicId);
-                            } catch {
-                              window.alert('Error al subir la imagen. Por favor intenta de nuevo.');
-                            }
-                          }}
-                        />
-                      </>
+
+                <td className="py-2 px-3 border relative">
+                  <EspecificacionImagen publicId={d.especificacion} width={200} height={200} alt="" />
+                </td>
+
+                <td className="py-2 px-3 border">{d.posicion}</td>
+                <td className="py-2 px-3 border">{d.tipo}</td>
+                <td className="py-2 px-3 border">{d.medida_diametro}</td>
+                <td className="py-2 px-3 border">{d.longitud_corte}</td>
+                <td className="py-2 px-3 border border-r-2 bg-primary-light text-white font-semibold">{d.cantidad_total}</td>
+                <td className="py-2 px-3 border text-center italic text-gray-500">
+                  —
+                </td>
+
+                {/* NO REGISTROS — aplicar NO CORRESPONDE si corresponde */}
+                {noDoblado || noEmpaquetado ? (
+                  <>
+                    <td
+                      className="py-2 px-3 border text-center italic text-gray-500"
+                      colSpan={idTarea === 2 ? 3 : 2}
+                    >
+                      NO CORRESPONDE
+                    </td>
+                    <td
+                      className="py-2 px-3 border text-center italic text-gray-500"
+                      colSpan={idTarea === 2 ? 3 : 2}
+                    >
+                      NO CORRESPONDE
+                    </td>
+                  </>
+                ) : (
+                  <>
+                    <td className="py-2 px-3 border text-center italic text-gray-500">-</td>
+                    <td className="py-2 px-3 border text-center italic text-gray-500">-</td>
+
+                    {idTarea === 2 && (
+                      <td className="py-2 px-3 border text-center italic text-gray-500">-</td>
                     )}
-                </td>
-                <td rowSpan={rowSpan} className={`py-2 px-3 border ${highlight('posicion', d.campos_modificados)}`}>
-                  <input
-                    type="text"
-                    value={editDetalles[d.id_detalle]?.posicion || ''}
-                    onChange={e => handleFieldChange(d.id_detalle, 'posicion', e.target.value)}
-                    disabled={!enCurso}
-                    className="w-full border rounded px-1 py-0.5 text-sm"
-                  />
-                </td>
-                <td rowSpan={rowSpan} className={`py-2 px-3 border ${highlight('tipo', d.campos_modificados)}`}>
-                  <input
-                    type="number"
-                    value={editDetalles[d.id_detalle]?.tipo || ''}
-                    onChange={e => handleFieldChange(d.id_detalle, 'tipo', +e.target.value)}
-                    disabled={!enCurso}
-                    className="w-full border rounded px-1 py-0.5 text-sm"
-                    step="1"
-                  />
-                </td>
-                <td className={`py-2 px-3 border ${highlight('medida_diametro', d.campos_modificados)}`}>
-                  <input
-                    type="number"
-                    value={editDetalles[d.id_detalle]?.medida_diametro || ''}
-                    onChange={e => handleFieldChange(d.id_detalle, 'medida_diametro', +e.target.value)}
-                    disabled={!enCurso}
-                    className="w-full border rounded px-1 py-0.5 text-sm"
-                    step="1"
-                  />
-                </td>
-                <td rowSpan={rowSpan} className={`py-2 px-3 border ${highlight('longitud_corte', d.campos_modificados)}`}>
-                  <input
-                    type="number"
-                    value={editDetalles[d.id_detalle]?.longitud_corte || ''}
-                    onChange={e => handleFieldChange(d.id_detalle, 'longitud_corte', +e.target.value)}
-                    disabled={!enCurso}
-                    className="w-full border rounded px-1 py-0.5 text-sm"
-                    step="0.01"
-                  />
-                </td>
-                <td rowSpan={rowSpan} className={`py-2 px-3 border border-r-2 bg-primary-light text-gray-900 font-semibold ${highlight('cantidad_total', d.campos_modificados)}`}>
-                  <input
-                    type="number"
-                    value={editDetalles[d.id_detalle]?.cantidad_total || ''}
-                    onChange={e => handleFieldChange(d.id_detalle, 'cantidad_total', +e.target.value)}
-                    disabled={!enCurso}
-                    className="w-full border rounded px-1 py-0.5 text-sm"
-                    step="1"
-                  />
-                </td>
-                <td colSpan={5} className="py-2 px-3 border text-center italic text-gray-500">No hay registros</td>
+
+                    <td className="py-2 px-3 border text-center italic text-gray-500">-</td>
+                    <td className="py-2 px-3 border text-center italic text-gray-500">-</td>
+
+                    {idTarea === 2 && (
+                      <td className="py-2 px-3 border text-center italic text-gray-500">-</td>
+                    )}
+                  </>
+                )}
               </tr>
             );
           })}
