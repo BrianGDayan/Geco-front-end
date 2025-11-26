@@ -221,48 +221,73 @@ export default function AdminTablaRegistro({ planilla, detalles, idTarea, onSave
                     {new Date(r.fecha).toLocaleDateString("es-ES")}
                   </td>
 
-                  {/* HORAS / NO CORRESPONDE */}
-                  {mostrarNoCorresponde ? (
-                    <>
-                      <td className="py-2 px-3 border text-center italic text-gray-500" colSpan={idTarea === 2 ? 3 : 2}>
-                        NO CORRESPONDE
-                      </td>
-                    </>
-                  ) : (
-                    <>
-                      <td className="py-2 px-3 border">{r.horas_trabajador}</td>
-                      <td className="py-2 px-3 border">{r.horas_ayudante ?? "-"}</td>
+           {/* HORAS / NO CORRESPONDE */}
+            {mostrarNoCorresponde ? (
+              <td
+                className="py-2 px-3 border text-center italic text-gray-500"
+                colSpan={horasCols.length}
+              >
+                NO CORRESPONDE
+              </td>
+            ) : (
+              <>
+                {(() => {
+                  const ops = r.operadores ?? [];
+                  const op1 = ops[0]?.tiempo_horas ?? '-';
+                  const op2 = ops[1]?.tiempo_horas ?? '-';
+                  const op3 = ops[2]?.tiempo_horas ?? '-';
 
-                      {/* Ayudante 2 solo en Doblado */}
+                  return (
+                    <>
+                      {/* Operador 1 */}
+                      <td className="py-2 px-3 border">{op1}</td>
+
+                      {/* Operador 2 */}
+                      <td className="py-2 px-3 border">{op2}</td>
+
+                      {/* Operador 3 solo si doblado */}
                       {idTarea === 2 && (
-                        <td className="py-2 px-3 border">
-                          {r.horas_ayudante2 ?? "-"}
-                        </td>
+                        <td className="py-2 px-3 border">{op3}</td>
                       )}
                     </>
-                  )}
+                  );
+                })()}
+              </>
+            )}
 
-                  {/* RENDIMIENTOS / NO CORRESPONDE */}
-                  {mostrarNoCorresponde ? (
-                    <td className="py-2 px-3 border text-center italic text-gray-500" colSpan={idTarea === 2 ? 3 : 2}>
-                      NO CORRESPONDE
-                    </td>
-                  ) : (
+            {/* RENDIMIENTOS / NO CORRESPONDE */}
+            {mostrarNoCorresponde ? (
+              <td
+                className="py-2 px-3 border text-center italic text-gray-500"
+                colSpan={rendCols.length}
+              >
+                NO CORRESPONDE
+              </td>
+            ) : (
+              <>
+                {(() => {
+                  const ops = r.operadores ?? [];
+                  const r1 = ops[0]?.rendimiento?.toFixed(3) ?? '-';
+                  const r2 = ops[1]?.rendimiento?.toFixed(3) ?? '-';
+                  const r3 = ops[2]?.rendimiento?.toFixed(3) ?? '-';
+
+                  return (
                     <>
-                      <td className="py-2 px-3 border">{r.rendimiento_trabajador.toFixed(3)}</td>
-                      <td className="py-2 px-3 border">
-                        {r.rendimiento_ayudante != null ? r.rendimiento_ayudante.toFixed(3) : "-"}
-                      </td>
+                      {/* Rendimiento operador 1 */}
+                      <td className="py-2 px-3 border">{r1}</td>
 
-                      {/* Ayudante2 solo en doblado */}
+                      {/* Rendimiento operador 2 */}
+                      <td className="py-2 px-3 border">{r2}</td>
+
+                      {/* Rendimiento operador 3 solo en doblado */}
                       {idTarea === 2 && (
-                        <td className="py-2 px-3 border">
-                          {r.rendimiento_ayudante2 != null ? r.rendimiento_ayudante2.toFixed(3) : "-"}
-                        </td>
+                        <td className="py-2 px-3 border">{r3}</td>
                       )}
                     </>
-                  )}
-
+                  );
+                })()}
+              </>
+            )}
                 </tr>
               ));
             }

@@ -35,8 +35,17 @@ export default function PlanillasPageEncargado() {
 
   if (error)
     return (
-      <div className="p-6 text-red-500">
-        Error al cargar planillas: {error}
+      <div className="p-6 text-red-500 text-center space-y-4">
+        <p>Error al cargar planillas: {error}</p>
+
+        {/* Botón solicitado */}
+        <button
+          onClick={() => router.push('/')}
+          className="px-4 py-2 rounded text-white"
+          style={{ backgroundColor: '#1B5FA3' }}
+        >
+          Volver a inicio
+        </button>
       </div>
     );
 

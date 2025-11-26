@@ -7,136 +7,110 @@ interface Props {
   planilla: PlanillaResponse;
 }
 
-type Stats = { sumTrab: number; sumAyu: number; sumAyu2: number; count: number };
-
 export default function AdminFooter({ planilla }: Props) {
-  const {
-    peso_total,
-    pesos_diametro,
-    rendimiento_global_corte_trabajador,
-    rendimiento_global_corte_ayudante,
-    rendimiento_global_doblado_trabajador,
-    rendimiento_global_doblado_ayudante,
-    rendimiento_global_doblado_ayudante2,
-    rendimiento_global_empaquetado_trabajador,
-    rendimiento_global_empaquetado_ayudante,
-  } = planilla;
-
-  const total = typeof peso_total === 'number' ? peso_total.toFixed(3) : '—';
-  const lista = Array.isArray(pesos_diametro) ? pesos_diametro : [];
+  const total = planilla.peso_total.toFixed(3);
+  const lista = Array.isArray(planilla.pesos_diametro) ? planilla.pesos_diametro : [];
 
   const agrupadoPorTipo = useMemo(() => {
     const mapa = new Map<
-      string,
+      number,
       {
-        corte: Stats;
-        doblado: Stats;
-        empaquetado: Stats;
+        corte: number[];
+        doblado: number[];
+        dobladoA1: number[];
+        dobladoA2: number[];
+        empaque: number[];
+        empaqueA1: number[];
       }
     >();
 
-    planilla.elemento.forEach(({ detalle }) =>
-      detalle.forEach((det) => {
-        const key = det.tipo.toString();
-
-        if (!mapa.has(key)) {
-          mapa.set(key, {
-            corte: { sumTrab: 0, sumAyu: 0, sumAyu2: 0, count: 0 },
-            doblado: { sumTrab: 0, sumAyu: 0, sumAyu2: 0, count: 0 },
-            empaquetado: { sumTrab: 0, sumAyu: 0, sumAyu2: 0, count: 0 },
+    for (const elem of planilla.elemento) {
+      for (const det of elem.detalle) {
+        const tipo = det.tipo;
+        if (!mapa.has(tipo)) {
+          mapa.set(tipo, {
+            corte: [],
+            doblado: [],
+            dobladoA1: [],
+            dobladoA2: [],
+            empaque: [],
+            empaqueA1: []
           });
         }
 
-        const stats = mapa.get(key)!;
+        const bloque = mapa.get(tipo)!;
 
-        det.detalle_tarea.forEach((dt) => {
+        for (const dt of det.detalle_tarea) {
           const tarea = dt.tarea.nombre_tarea;
 
-          dt.registro.forEach(
-            ({ rendimiento_trabajador: tr, rendimiento_ayudante: ay, rendimiento_ayudante2: ay2 }) => {
-              if (tarea === 'Corte') {
-                stats.corte.sumTrab += tr;
-                stats.corte.sumAyu += ay ?? 0;
-                stats.corte.sumAyu2 += 0;
-                stats.corte.count++;
-              } else if (tarea === 'Doblado') {
-                stats.doblado.sumTrab += tr;
-                stats.doblado.sumAyu += ay ?? 0;
-                stats.doblado.sumAyu2 += ay2 ?? 0;
-                stats.doblado.count++;
-              } else if (tarea === 'Empaquetado') {
-                stats.empaquetado.sumTrab += tr;
-                stats.empaquetado.sumAyu += ay ?? 0;
-                stats.empaquetado.sumAyu2 += 0;
-                stats.empaquetado.count++;
-              }
+          for (const reg of dt.registro) {
+            const ops = reg.operadores || [];
+
+            const op1 = ops[0]?.rendimiento ?? 0;
+            const op2 = ops[1]?.rendimiento ?? 0;
+            const op3 = ops[2]?.rendimiento ?? 0;
+
+            if (tarea === "Corte") {
+              bloque.corte.push(op1);
+              bloque.corte.push(op2);
             }
-          );
-        });
-      })
-    );
 
-    return Array.from(mapa.entries()).map(([tipo, s]) => {
-      const t = Number(tipo);
+            if (tarea === "Doblado") {
+              bloque.doblado.push(op1);
+              bloque.dobladoA1.push(op2);
+              bloque.dobladoA2.push(op3);
+            }
 
-      const corte1 = s.corte.count ? s.corte.sumTrab / s.corte.count : 0;
-      const corte2 = s.corte.count ? s.corte.sumAyu / s.corte.count : 0;
+            if (tarea === "Empaquetado") {
+              bloque.empaque.push(op1);
+              bloque.empaqueA1.push(op2);
+            }
+          }
+        }
+      }
+    }
 
-      const dobl1 = s.doblado.count ? s.doblado.sumTrab / s.doblado.count : 0;
-      const dobl2 = s.doblado.count ? s.doblado.sumAyu / s.doblado.count : 0;
-      const dobl3 = s.doblado.count ? s.doblado.sumAyu2 / s.doblado.count : 0;
-
-      const emp1 = s.empaquetado.count ? s.empaquetado.sumTrab / s.empaquetado.count : 0;
-      const emp2 = s.empaquetado.count ? s.empaquetado.sumAyu / s.empaquetado.count : 0;
+    return Array.from(mapa.entries()).map(([tipo, b]) => {
+      const avg = (arr: number[]) =>
+        arr.length ? arr.reduce((s, v) => s + v, 0) / arr.length : 0;
 
       return {
         tipo,
-        corte1,
-        corte2,
-        dobl1,
-        dobl2,
-        dobl3,
-        emp1,
-        emp2,
-        noDoblado: t === 1, // tipo 1 no tiene doblado
-        noEmpaquetado: t === 4, // tipo 4 no tiene empaquetado
+        corte1: avg(b.corte.slice(0, b.corte.length / 2)),
+        corte2: avg(b.corte.slice(b.corte.length / 2)),
+        dobl1: avg(b.doblado),
+        dobl2: avg(b.dobladoA1),
+        dobl3: avg(b.dobladoA2),
+        emp1: avg(b.empaque),
+        emp2: avg(b.empaqueA1),
+        noDoblado: tipo === 1,
+        noEmpaque: tipo === 4
       };
     });
   }, [planilla]);
 
-  const sumaAyudantes =
-    rendimiento_global_corte_trabajador +
-    rendimiento_global_corte_ayudante +
-    rendimiento_global_empaquetado_trabajador +
-    rendimiento_global_empaquetado_ayudante +
-    rendimiento_global_doblado_ayudante +
-    rendimiento_global_doblado_ayudante2;
-
   return (
     <section className="space-y-8 max-w-7xl mx-auto px-4">
-      
-      {/* Peso Total y por diámetro */}
+
+      {/* —— PESO —— */}
       <div className="bg-gray-bg rounded-2xl shadow-md p-6">
         <h2 className="text-xl font-bold text-primary-dark mb-4 text-center">Peso Total (Tn)</h2>
+
         <div className="flex flex-col items-center mb-6">
           <span className="text-4xl font-extrabold text-primary-mid mb-4">{total}</span>
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 w-full">
-            {lista.length ? (
-              lista.map(({ diametro, peso }, i) => (
-                <div key={i} className="bg-white rounded-lg p-3 flex flex-col items-center">
-                  <span className="text-sm font-medium text-gray-text mb-1">Ø {diametro}</span>
-                  <span className="text-lg font-semibold text-gray-text">{peso.toFixed(3)}</span>
-                </div>
-              ))
-            ) : (
-              <div className="col-span-full text-center text-gray-500">No hay datos por diámetro</div>
-            )}
+            {lista.map(({ diametro, peso }, i) => (
+              <div key={i} className="bg-white rounded-lg p-3 flex flex-col items-center">
+                <span className="text-sm font-medium text-gray-text mb-1">Ø {diametro}</span>
+                <span className="text-lg font-semibold text-gray-text">{peso.toFixed(3)}</span>
+              </div>
+            ))}
           </div>
         </div>
       </div>
 
-      {/* Medidas de rendimiento por tipo */}
+      {/* —— RENDIMIENTOS POR TIPO —— */}
       <div>
         <h2 className="text-xl font-bold text-primary-dark mb-4 text-center">Medidas de Rendimiento</h2>
 
@@ -153,7 +127,9 @@ export default function AdminFooter({ planilla }: Props) {
                 {/* Corte */}
                 <li className="flex justify-between">
                   <span>Corte:</span>
-                  <span>{t.corte1.toFixed(3)} / {t.corte2.toFixed(3)}</span>
+                  <span>
+                    {t.corte1.toFixed(3)} / {t.corte2.toFixed(3)}
+                  </span>
                 </li>
 
                 {/* Doblado */}
@@ -168,10 +144,10 @@ export default function AdminFooter({ planilla }: Props) {
                   )}
                 </li>
 
-                {/* Empaquetado */}
+                {/* Empaque */}
                 <li className="flex justify-between">
                   <span>Empaquetado:</span>
-                  {t.noEmpaquetado ? (
+                  {t.noEmpaque ? (
                     <span>No corresponde</span>
                   ) : (
                     <span>
@@ -179,14 +155,13 @@ export default function AdminFooter({ planilla }: Props) {
                     </span>
                   )}
                 </li>
-
               </ul>
             </div>
           ))}
         </div>
       </div>
 
-      {/* Rendimientos globales */}
+      {/* —— RENDIMIENTOS GLOBALES —— */}
       <div className="bg-white rounded-2xl shadow-md p-6">
         <h2 className="text-xl font-semibold text-primary-dark mb-4 text-center">
           Rendimientos Globales
@@ -196,49 +171,28 @@ export default function AdminFooter({ planilla }: Props) {
           <div>
             <h3 className="text-sm font-medium text-gray-text mb-1">Corte</h3>
             <p className="text-xl font-bold text-gray-text">
-              {rendimiento_global_corte_trabajador.toFixed(3)} /
-              {rendimiento_global_corte_ayudante.toFixed(3)}
+              {planilla.rendimiento_global_corte_trabajador.toFixed(3)} /
+              {planilla.rendimiento_global_corte_ayudante.toFixed(3)}
             </p>
           </div>
 
           <div>
             <h3 className="text-sm font-medium text-gray-text mb-1">Doblado</h3>
             <p className="text-xl font-bold text-gray-text">
-              {rendimiento_global_doblado_trabajador.toFixed(3)} /
-              {rendimiento_global_doblado_ayudante.toFixed(3)} /
-              {rendimiento_global_doblado_ayudante2.toFixed(3)}
+              {planilla.rendimiento_global_doblado_trabajador.toFixed(3)} /
+              {planilla.rendimiento_global_doblado_ayudante.toFixed(3)} /
+              {planilla.rendimiento_global_doblado_ayudante2.toFixed(3)}
             </p>
           </div>
 
           <div>
             <h3 className="text-sm font-medium text-gray-text mb-1">Empaquetado</h3>
             <p className="text-xl font-bold text-gray-text">
-              {rendimiento_global_empaquetado_trabajador.toFixed(3)} /
-              {rendimiento_global_empaquetado_ayudante.toFixed(3)}
+              {planilla.rendimiento_global_empaquetado_trabajador.toFixed(3)} /
+              {planilla.rendimiento_global_empaquetado_ayudante.toFixed(3)}
             </p>
           </div>
         </div>
-
-        <h3 className="mt-8 text-base font-bold text-primary-dark text-center uppercase tracking-wide">
-          Suma de Rendimientos
-        </h3>
-
-        <div className="mt-4 flex flex-col sm:flex-row justify-center items-center gap-5">
-          <div className="flex flex-col items-center px-3">
-            <h3 className="text-sm font-medium text-gray-text mb-1">Doblador</h3>
-            <p className="text-2xl font-extrabold text-primary-dark">
-              {rendimiento_global_doblado_trabajador.toFixed(3)}
-            </p>
-          </div>
-
-          <div className="flex flex-col items-center px-3">
-            <h3 className="text-sm font-medium text-gray-text mb-1">Ayudantes</h3>
-            <p className="text-2xl font-extrabold text-primary-dark">
-              {sumaAyudantes.toFixed(3)}
-            </p>
-          </div>
-        </div>
-
       </div>
     </section>
   );

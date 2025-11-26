@@ -22,17 +22,8 @@ export interface RegistroResponse {
   id_detalle_tarea: number;
   fecha: string;
   cantidad: number;
-  horas_trabajador: number;
-  horas_ayudante: number | null;
-  horas_ayudante2: number | null;
-  rendimiento_trabajador: number;
-  rendimiento_ayudante: number | null;
-  rendimiento_ayudante2: number | null;
   id_usuario: number;
-  id_trabajador: number;
-  id_ayudante: number | null;
-  id_ayudante2: number | null;
-  operadores?: OperadorRegistro[];
+  operadores: OperadorRegistro[];
 }
 
 export async function CreateRegistro(data: RegistroDto) {

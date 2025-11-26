@@ -1,48 +1,70 @@
 'use client';
 
 import React from 'react';
-import { useTimers } from '../hooks/useTimers';
+import { useTimers, secToTimeHHMM } from '../hooks/useTimers';
 
-interface Props {
-  idDetalleTarea: number;
+interface TimerButtonProps {
   idDetalle: number;
+  idDetalleTarea: number;
   idTarea: number;
-  className?: string;
+  slot: number;                  // 1,2,3
+  onStopped: () => void;
+  disabled?: boolean;
 }
 
 export default function TimerButton({
-  idDetalleTarea,
   idDetalle,
+  idDetalleTarea,
   idTarea,
-  className,
-}: Props) {
-  const { timers, startTimer, stopTimer } = useTimers();
-  const timer = timers[idDetalleTarea];
+  slot,
+  onStopped,
+  disabled = false,
+}: TimerButtonProps) {
+  const { getTimer, startTimer, stopTimer } = useTimers();
+  const timer = getTimer(idDetalleTarea, slot);
 
-  const running = !!timer?.running;
-  const elapsed = timer?.elapsedSec ?? (timer?.startedAt && timer?.stoppedAt
-    ? Math.floor((new Date(timer.stoppedAt!).getTime() - new Date(timer.startedAt!).getTime()) / 1000)
-    : 0);
+  const hasTimer = !!timer;
+  const isRunning = !!timer?.running;
+  const sec = timer?.elapsedSec ?? 0;
 
-  // Mostrar mm:ss para que se vea el avance segundo a segundo
-  const minutes = Math.floor(elapsed / 60).toString().padStart(2, '0');
-  const seconds = (elapsed % 60).toString().padStart(2, '0');
-  const timeLabel = `${minutes}:${seconds}`;
+  const label = (() => {
+    if (!hasTimer) return 'Iniciar';
+    if (isRunning) return `Detener (${secToTimeHHMM(sec)})`;
+    return 'Ver registro';
+  })();
 
-  const handleToggle = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (running) stopTimer(idDetalleTarea);
-    else startTimer({ idDetalleTarea, idDetalle, idTarea });
+  const handleClick = () => {
+    if (disabled) return;
+
+    if (!hasTimer) {
+      startTimer({ idDetalleTarea, idDetalle, idTarea, slot });
+      return;
+    }
+
+    if (isRunning) {
+      stopTimer(idDetalleTarea, slot);
+      onStopped();
+      return;
+    }
+
+    // Timer detenido: solo abrir modal sin tocar tiempos
+    onStopped();
   };
 
   return (
     <button
-      onClick={handleToggle}
-      className={`inline-flex items-center gap-2 px-3 py-1 rounded text-sm border ${running ? 'bg-red-600 text-white' : 'bg-green-600 text-white'} ${className || ''}`}
-      title={running ? 'Detener temporizador' : 'Iniciar temporizador'}
+      type="button"
+      onClick={handleClick}
+      disabled={disabled}
+      className={`px-3 py-1 rounded text-xs sm:text-sm border ${
+        disabled
+          ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
+          : isRunning
+          ? 'bg-primary text-white'
+          : 'bg-white text-primary border-primary'
+      }`}
     >
-      <span className="font-mono text-xs">{timeLabel}</span>
-      <span>{running ? 'Parar' : 'Iniciar'}</span>
+      {label}
     </button>
   );
 }
