@@ -12,17 +12,15 @@ export type TimerEntry = {
   idDetalleTarea: number;
   idDetalle: number;
   idTarea: number;
-  slot: number;              // 1,2,3 según rol
-  startedAt: string | null;  // ISO
-  stoppedAt: string | null;  // ISO
+  slot: number;
+  startedAt: string | null;   // ISO string
+  stoppedAt: string | null;   // ISO string
   running: boolean;
-  elapsedSec?: number;
+  elapsedSec: number;         // segundos acumulados
 };
 
-type TimersMap = Record<string, TimerEntry>; // key = `${idDetalleTarea}-${slot}`
-
 type TimersContextType = {
-  timers: TimersMap;
+  timers: Record<string, TimerEntry>;
   startTimer: (args: {
     idDetalleTarea: number;
     idDetalle: number;
@@ -32,94 +30,100 @@ type TimersContextType = {
   stopTimer: (idDetalleTarea: number, slot: number) => void;
   clearTimer: (idDetalleTarea: number, slot: number) => void;
   getTimer: (idDetalleTarea: number, slot: number) => TimerEntry | undefined;
-  tickNow: () => void;
 };
 
-const STORAGE_KEY = 'timers-v2';
-const TimersContext = createContext<TimersContextType | null>(null);
+const TimersContext = createContext<TimersContextType | undefined>(undefined);
 
-function makeKey(idDetalleTarea: number, slot: number) {
+const STORAGE_KEY = 'geco-timers-v2';
+
+function makeKey(idDetalleTarea: number, slot: number): string {
   return `${idDetalleTarea}-${slot}`;
 }
 
 export function TimersProvider({ children }: { children: React.ReactNode }) {
-  const [timers, setTimers] = useState<TimersMap>({});
-  const intervalRef = useRef<number | null>(null);
+  const [timers, setTimers] = useState<Record<string, TimerEntry>>({});
+  const initializedRef = useRef(false);
 
-  // Carga inicial desde localStorage
+  // Cargar desde localStorage al montar
   useEffect(() => {
+    if (initializedRef.current) return;
+    initializedRef.current = true;
+
     try {
       const raw = typeof window !== 'undefined'
-        ? localStorage.getItem(STORAGE_KEY)
+        ? window.localStorage.getItem(STORAGE_KEY)
         : null;
       if (!raw) return;
 
-      const parsed = JSON.parse(raw) as any[];
-      const map: TimersMap = {};
+      const parsed: Record<string, TimerEntry> = JSON.parse(raw);
 
-      parsed.forEach((item) => {
-        if (!item) return;
-        // formato nuevo: { key, ...entry }
-        if (item.key && typeof item.key === 'string') {
-          const { key, ...entry } = item;
-          map[key] = entry as TimerEntry;
-        } else if (typeof item.idDetalleTarea === 'number') {
-          // posible formato viejo: un solo timer por detalle_tarea → lo migro a slot 1
-          const key = makeKey(item.idDetalleTarea, 1);
-          map[key] = {
-            idDetalleTarea: item.idDetalleTarea,
-            idDetalle: item.idDetalle,
-            idTarea: item.idTarea,
-            slot: item.slot ?? 1,
-            startedAt: item.startedAt ?? null,
-            stoppedAt: item.stoppedAt ?? null,
-            running: !!item.running,
-            elapsedSec: item.elapsedSec ?? 0,
-          };
+      const now = Date.now();
+      const fixed: Record<string, TimerEntry> = {};
+
+      Object.entries(parsed).forEach(([key, t]) => {
+        let elapsed = t.elapsedSec || 0;
+
+        if (t.running && t.startedAt) {
+          const startMs = new Date(t.startedAt).getTime();
+          if (!Number.isNaN(startMs)) {
+            const diff = Math.max(0, Math.floor((now - startMs) / 1000));
+            elapsed = diff;
+          }
         }
+
+        fixed[key] = {
+          ...t,
+          elapsedSec: elapsed,
+        };
       });
 
-      setTimers(map);
+      setTimers(fixed);
     } catch {
-      setTimers({});
+      // si hay error, ignoramos y empezamos vacío
     }
   }, []);
 
-  // Persistir en localStorage
+  // Guardar en localStorage cuando cambian
   useEffect(() => {
     try {
-      const arr = Object.entries(timers).map(([key, entry]) => ({
-        key,
-        ...entry,
-      }));
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(arr));
+      if (typeof window === 'undefined') return;
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(timers));
     } catch {
-      // ignore
+      // ignorar errores de storage
     }
   }, [timers]);
 
-  // Intervalo para actualizar elapsedSec de timers corriendo
+  // Tick de 1s para actualizar elapsedSec de timers corriendo
   useEffect(() => {
-    intervalRef.current = window.setInterval(() => {
-      setTimers((prev) => {
-        const copy: TimersMap = { ...prev };
+    const interval = setInterval(() => {
+      setTimers(prev => {
         const now = Date.now();
-        Object.entries(copy).forEach(([key, t]) => {
+        let changed = false;
+        const next: Record<string, TimerEntry> = {};
+
+        for (const [key, t] of Object.entries(prev)) {
           if (t.running && t.startedAt) {
-            const started = new Date(t.startedAt).getTime();
-            copy[key] = {
-              ...t,
-              elapsedSec: Math.max(0, Math.floor((now - started) / 1000)),
-            };
+            const startMs = new Date(t.startedAt).getTime();
+            if (!Number.isNaN(startMs)) {
+              const diff = Math.max(
+                0,
+                Math.floor((now - startMs) / 1000),
+              );
+              if (diff !== t.elapsedSec) {
+                changed = true;
+                next[key] = { ...t, elapsedSec: diff };
+                continue;
+              }
+            }
           }
-        });
-        return copy;
+          next[key] = t;
+        }
+
+        return changed ? next : prev;
       });
     }, 1000);
 
-    return () => {
-      if (intervalRef.current) window.clearInterval(intervalRef.current);
-    };
+    return () => clearInterval(interval);
   }, []);
 
   const startTimer: TimersContextType['startTimer'] = ({
@@ -128,22 +132,24 @@ export function TimersProvider({ children }: { children: React.ReactNode }) {
     idTarea,
     slot,
   }) => {
-    const nowIso = new Date().toISOString();
     const key = makeKey(idDetalleTarea, slot);
+    const nowIso = new Date().toISOString();
 
-    setTimers((prev) => {
+    setTimers(prev => {
       const existing = prev[key];
-      const entry: TimerEntry = {
-        idDetalleTarea,
-        idDetalle,
-        idTarea,
-        slot,
-        startedAt: existing?.running ? existing.startedAt : nowIso,
-        stoppedAt: null,
-        running: true,
-        elapsedSec: 0,
+      return {
+        ...prev,
+        [key]: {
+          idDetalleTarea,
+          idDetalle,
+          idTarea,
+          slot,
+          startedAt: nowIso,
+          stoppedAt: null,
+          running: true,
+          elapsedSec: existing?.elapsedSec ?? 0,
+        },
       };
-      return { ...prev, [key]: entry };
     });
   };
 
@@ -154,22 +160,24 @@ export function TimersProvider({ children }: { children: React.ReactNode }) {
     const key = makeKey(idDetalleTarea, slot);
     const nowIso = new Date().toISOString();
 
-    setTimers((prev) => {
-      const entry = prev[key];
-      if (!entry) return prev;
-      const started = entry.startedAt
-        ? new Date(entry.startedAt).getTime()
-        : Date.now();
-      const elapsed = Math.max(
-        0,
-        Math.floor((Date.now() - started) / 1000),
-      );
+    setTimers(prev => {
+      const t = prev[key];
+      if (!t || !t.startedAt) return prev;
+
+      const startMs = new Date(t.startedAt).getTime();
+      const stopMs = new Date(nowIso).getTime();
+
+      const elapsed =
+        !Number.isNaN(startMs) && stopMs > startMs
+          ? Math.floor((stopMs - startMs) / 1000)
+          : t.elapsedSec;
+
       return {
         ...prev,
         [key]: {
-          ...entry,
-          stoppedAt: nowIso,
+          ...t,
           running: false,
+          stoppedAt: nowIso,
           elapsedSec: elapsed,
         },
       };
@@ -181,10 +189,11 @@ export function TimersProvider({ children }: { children: React.ReactNode }) {
     slot,
   ) => {
     const key = makeKey(idDetalleTarea, slot);
-    setTimers((prev) => {
-      const copy = { ...prev };
-      delete copy[key];
-      return copy;
+    setTimers(prev => {
+      if (!(key in prev)) return prev;
+      const next = { ...prev };
+      delete next[key];
+      return next;
     });
   };
 
@@ -196,17 +205,12 @@ export function TimersProvider({ children }: { children: React.ReactNode }) {
     return timers[key];
   };
 
-  const tickNow = () => {
-    setTimers((prev) => ({ ...prev }));
-  };
-
   const value: TimersContextType = {
     timers,
     startTimer,
     stopTimer,
     clearTimer,
     getTimer,
-    tickNow,
   };
 
   return (
@@ -216,25 +220,10 @@ export function TimersProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
-export function useTimers() {
+export function useTimers(): TimersContextType {
   const ctx = useContext(TimersContext);
-  if (!ctx) throw new Error('useTimers must be used within TimersProvider');
+  if (!ctx) {
+    throw new Error('useTimers debe usarse dentro de TimersProvider');
+  }
   return ctx;
-}
-
-export function formatSecToHourDecimal(sec: number) {
-  const decimal = +(sec / 3600).toFixed(2);
-  const h = Math.floor(sec / 3600);
-  const m = Math.floor((sec % 3600) / 60);
-  return { h, m, decimal };
-}
-
-export function secToTimeHHMM(sec: number) {
-  const h = Math.floor(sec / 3600)
-    .toString()
-    .padStart(2, '0');
-  const m = Math.floor((sec % 3600) / 60)
-    .toString()
-    .padStart(2, '0');
-  return `${h}:${m}`;
 }

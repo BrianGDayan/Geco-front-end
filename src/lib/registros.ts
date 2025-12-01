@@ -5,6 +5,7 @@ export interface OperadorRegistro {
   tiempo_horas: number;
   cantidad_unidades: number;
   rendimiento: number;
+  slot: number;
 }
 
 export interface RegistroDto {
@@ -14,6 +15,7 @@ export interface RegistroDto {
   operadores: {
     idTrabajador: number;
     tiempoHoras: number;
+    slot: number;
   }[];
 }
 

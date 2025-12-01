@@ -1,4 +1,3 @@
-// lib/auth.ts
 import { fetcher } from "./api";
 
 export interface LoginDto {

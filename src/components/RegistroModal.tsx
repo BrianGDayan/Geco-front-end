@@ -19,17 +19,13 @@ interface Props {
 }
 
 function getLabelBySlot(idTarea: number, slot: number): string {
-  if (idTarea === 1) {
-    return slot === 1 ? 'Cortador 1' : 'Cortador 2';
-  }
+  if (idTarea === 1) return slot === 1 ? 'Cortador 1' : 'Cortador 2';
   if (idTarea === 2) {
     if (slot === 1) return 'Doblador';
     if (slot === 2) return 'Ayudante 1';
     return 'Ayudante 2';
   }
-  if (idTarea === 3) {
-    return slot === 1 ? 'Empaquetador 1' : 'Empaquetador 2';
-  }
+  if (idTarea === 3) return slot === 1 ? 'Empaquetador 1' : 'Empaquetador 2';
   return 'Operador';
 }
 
@@ -42,6 +38,9 @@ export default function RegistroModal({
   onClose,
   onSaved,
 }: Props) {
+  // --- KEY CORRECTA PARA TIMERS MULTIPLES ---
+  const key = `${idDetalleTarea}-${slot}`;
+
   const [cantidad, setCantidad] = useState<number>(1);
   const [ini, setIni] = useState<string>('');
   const [fin, setFin] = useState<string>('');
@@ -56,8 +55,10 @@ export default function RegistroModal({
     getTrabajadoresActivos,
   );
 
+  // --- CAMBIO CLAVE: ahora los timers se leen por key compuesta ---
   const { getTimer, clearTimer } = useTimers();
   const timer = getTimer(idDetalleTarea, slot);
+
   const labelOperador = getLabelBySlot(idTarea, slot);
 
   const [selectedTrabajador, setSelectedTrabajador] =
@@ -73,8 +74,9 @@ export default function RegistroModal({
 
   const filtered = filtrar(query, trabajadores);
 
+  // Cargar valores del timer
   useEffect(() => {
-    if (timer && timer.startedAt && timer.stoppedAt) {
+    if (timer?.startedAt && timer?.stoppedAt) {
       const s = new Date(timer.startedAt);
       const e = new Date(timer.stoppedAt);
 
@@ -103,13 +105,14 @@ export default function RegistroModal({
       return;
     }
 
-    if (!timer || !timer.startedAt || !timer.stoppedAt) {
+    if (!timer?.startedAt || !timer?.stoppedAt) {
       setErrorHoras('No se encontró el temporizador para este operador.');
       return;
     }
 
     const s = new Date(timer.startedAt).getTime();
     const eMs = new Date(timer.stoppedAt).getTime();
+
     const horas = +(((eMs - s) / 3600000) || 0).toFixed(2);
 
     if (horas <= 0) {
@@ -127,13 +130,14 @@ export default function RegistroModal({
         {
           idTrabajador: selectedTrabajador.id_trabajador,
           tiempoHoras: horas,
+          slot, // ← ahora se envía el slot para saber qué operador fue
         },
       ],
     };
 
     try {
       await CreateRegistro(payload);
-      clearTimer(idDetalleTarea, slot);
+      clearTimer(idDetalleTarea, slot); // ← limpia el timer correcto
       onSaved();
       onClose();
     } catch (err: any) {
@@ -148,7 +152,7 @@ export default function RegistroModal({
       <div className="fixed inset-0 flex items-center justify-center p-4">
         <div className="bg-white rounded-2xl p-5 shadow-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
           <Dialog.Title className="text-lg font-semibold mb-3">
-            Nuevo registro – {getLabelBySlot(idTarea, slot)}
+            Nuevo registro – {labelOperador}
           </Dialog.Title>
 
           <div className="flex justify-between mb-4 text-sm">
@@ -177,9 +181,7 @@ export default function RegistroModal({
                         displayValue={(t: TrabajadorActivo | null) =>
                           t?.nombre ?? ''
                         }
-                        onChange={(e) => {
-                          setQuery(e.target.value);
-                        }}
+                        onChange={(e) => setQuery(e.target.value)}
                       />
                       <Combobox.Button className="ml-2 p-2">
                         <ChevronUpDownIcon className="h-5 w-5 text-gray-500" />
@@ -204,18 +206,12 @@ export default function RegistroModal({
                               key={t.id_trabajador}
                               value={t}
                               className={({ active }) =>
-                                `cursor-pointer px-3 py-2 ${
-                                  active ? 'bg-gray-100' : ''
-                                }`
+                                `cursor-pointer px-3 py-2 ${active ? 'bg-gray-100' : ''}`
                               }
                             >
                               {({ selected }) => (
                                 <div className="flex items-center justify-between">
-                                  <span
-                                    className={
-                                      selected ? 'font-semibold' : ''
-                                    }
-                                  >
+                                  <span className={selected ? 'font-semibold' : ''}>
                                     {t.nombre}
                                   </span>
                                   {selected && (
@@ -231,10 +227,9 @@ export default function RegistroModal({
                   </div>
                 )}
               </Combobox>
+
               {errorOperador && (
-                <p className="text-red-600 text-sm mt-1">
-                  {errorOperador}
-                </p>
+                <p className="text-red-600 text-sm mt-1">{errorOperador}</p>
               )}
             </div>
 
@@ -244,48 +239,41 @@ export default function RegistroModal({
               <div className="flex items-center gap-3">
                 <button
                   type="button"
-                  onClick={() =>
-                    setCantidad((c) => Math.max(1, c - 1))
-                  }
+                  onClick={() => setCantidad((c) => Math.max(1, c - 1))}
                   className="px-3 py-2 bg-gray-200 rounded text-xl"
-                  aria-label="Disminuir cantidad"
                 >
                   −
                 </button>
+
                 <input
                   type="number"
                   inputMode="numeric"
                   pattern="[0-9]*"
                   value={cantidad}
-                  onChange={(e) =>
-                    setCantidad(Number(e.target.value))
-                  }
+                  onChange={(e) => setCantidad(Number(e.target.value))}
                   className="w-20 text-center rounded border py-2 text-lg"
                   min={1}
                   max={cantidadTotal}
                   required
                 />
+
                 <button
                   type="button"
                   onClick={() =>
-                    setCantidad((c) =>
-                      Math.min(cantidadTotal, c + 1),
-                    )
+                    setCantidad((c) => Math.min(cantidadTotal, c + 1))
                   }
                   className="px-3 py-2 bg-gray-200 rounded text-xl"
-                  aria-label="Aumentar cantidad"
                 >
                   +
                 </button>
               </div>
+
               {errorCantidad && (
-                <p className="text-red-600 text-sm mt-1">
-                  {errorCantidad}
-                </p>
+                <p className="text-red-600 text-sm mt-1">{errorCantidad}</p>
               )}
             </div>
 
-            {/* Horas (solo lectura, desde el timer) */}
+            {/* Horas */}
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <div>
@@ -314,9 +302,7 @@ export default function RegistroModal({
               </div>
 
               {errorHoras && (
-                <p className="text-red-600 text-sm mt-1">
-                  {errorHoras}
-                </p>
+                <p className="text-red-600 text-sm mt-1">{errorHoras}</p>
               )}
             </div>
 
@@ -329,6 +315,7 @@ export default function RegistroModal({
               >
                 Volver
               </button>
+
               <button
                 type="submit"
                 disabled={isSubmitting}

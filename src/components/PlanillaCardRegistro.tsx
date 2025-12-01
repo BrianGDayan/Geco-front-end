@@ -1,11 +1,12 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { CheckCircle } from 'lucide-react';
 import TimerButton from '../components/TimerButton';
 import { DetalleResponse, RegistroResponse } from '../lib/planillas';
 import RegistroModal from './RegistroModal';
 import EspecificacionImagen from '../components/EspecificacionImagen';
+import { useTimers } from '../hooks/useTimers';
 
 function highlight(field: string, camposModificados?: string[]) {
   return camposModificados?.includes(field) ? 'border-2 border-red-500' : '';
@@ -33,20 +34,78 @@ export default function PlanillaCardRegistro({
 }: Props) {
   const [showModal, setShowModal] = useState<ModalState>(null);
 
-  // NUEVO: slots activados por detalle (solo cuando el usuario agrega un operador extra)
+  // slots extra activos por detalle (slot 1 siempre se considera activo)
   const [activeSlotsByDetalle, setActiveSlotsByDetalle] = useState<
     Record<number, number[]>
   >({});
 
-  // Encabezados EXACTOS según tarea (mantiene estética original)
-  const timerHeaders: Record<number, string[]> = {
-    1: ['Cort. 1', 'Cort. 2'],
-    2: ['Dobl.', 'Ayud. 1', 'Ayud. 2'],
-    3: ['Emp. 1', 'Emp. 2'],
+  const { timers } = useTimers();
+  const prevRunningRef = useRef<Record<string, boolean>>({});
+
+  const getHeadersCount = () => {
+    if (idTarea === 1) return 2; // Corte: Cort.1, Cort.2
+    if (idTarea === 2) return 3; // Doblado: Dobl, Ayud.1, Ayud.2
+    if (idTarea === 3) return 2; // Empaque: Emp.1, Emp.2
+    return 1;
   };
 
-  const headers = timerHeaders[idTarea] ?? ['Operador'];
-  const colSpanTimers = headers.length;
+  // 1) Hidratar slots activos a partir de timers existentes
+  useEffect(() => {
+    const headersCount = getHeadersCount();
+
+    setActiveSlotsByDetalle((prev) => {
+      const next: Record<number, number[]> = { ...prev };
+
+      detalles.forEach((detalle) => {
+        const tareaObj = detalle.detalle_tarea[0];
+        if (!tareaObj) return;
+
+        const idDT = tareaObj.id_detalle_tarea;
+
+        for (let slot = 2; slot <= headersCount; slot++) {
+          const key = `${idDT}-${slot}`;
+          const t = timers[key];
+          if (t) {
+            const current = next[detalle.id_detalle] ?? [];
+            if (!current.includes(slot)) {
+              next[detalle.id_detalle] = [...current, slot];
+            }
+          }
+        }
+      });
+
+      return next;
+    });
+  }, [timers, detalles, idTarea]);
+
+  // 2) Detectar cuando cualquier timer (por slot) pasa de running=true a false con stoppedAt
+  useEffect(() => {
+    const headersCount = getHeadersCount();
+
+    detalles.forEach((detalle) => {
+      const tareaObj = detalle.detalle_tarea[0];
+      if (!tareaObj) return;
+
+      const idDT = tareaObj.id_detalle_tarea;
+
+      for (let slot = 1; slot <= headersCount; slot++) {
+        const key = `${idDT}-${slot}`;
+        const timer = timers[key];
+        const prev = prevRunningRef.current[key];
+
+        if (prev && timer && !timer.running && timer.stoppedAt) {
+          setShowModal({
+            idDetalle: detalle.id_detalle,
+            idDetalleTarea: idDT,
+            cantidadTotal: detalle.cantidad_total,
+            slot,
+          });
+        }
+
+        prevRunningRef.current[key] = timer?.running ?? false;
+      }
+    });
+  }, [timers, detalles, idTarea]);
 
   const getColorClase = () => {
     if (idTarea === 1) return 'bg-primary text-white';
@@ -54,40 +113,35 @@ export default function PlanillaCardRegistro({
     return 'bg-[#6A1B4D] text-white';
   };
 
-  // Regla de "NO CORRESPONDE"
+  const timerHeaders: Record<number, string[]> = {
+    1: ['Cort. 1', 'Cort. 2'],
+    2: ['Dobl.', 'Ayud. 1', 'Ayud. 2'],
+    3: ['Emp. 1', 'Emp. 2'],
+  };
+
+  const headers = timerHeaders[idTarea] ?? ['Op. 1'];
+  const timerColSpan = headers.length;
+
   const isTaskApplicable = (detalle: DetalleResponse) => {
     const tipo = Number(detalle.tipo);
-    if (idTarea === 2 && tipo === 1) return false;
-    if (idTarea === 3 && tipo === 4) return false;
+    if (idTarea === 2 && tipo === 1) return false; // doblado no aplica a tipo 1
+    if (idTarea === 3 && tipo === 4) return false; // empaque no aplica a tipo 4
     return true;
   };
 
-  // Slot principal siempre activo, los demás requieren activación
   const isSlotActive = (idDetalle: number, slot: number) => {
-    if (slot === 1) return true;
-    const arr = activeSlotsByDetalle[idDetalle] ?? [];
-    return arr.includes(slot);
+    if (slot === 1) return true; // primer operador siempre visible
+    const list = activeSlotsByDetalle[idDetalle] ?? [];
+    return list.includes(slot);
   };
 
   const activateSlot = (idDetalle: number, slot: number) => {
-    setActiveSlotsByDetalle(prev => {
-      const curr = prev[idDetalle] ?? [];
-      if (curr.includes(slot)) return prev;
-      return { ...prev, [idDetalle]: [...curr, slot] };
+    setActiveSlotsByDetalle((prev) => {
+      const list = prev[idDetalle] ?? [];
+      if (list.includes(slot)) return prev;
+      return { ...prev, [idDetalle]: [...list, slot] };
     });
   };
-
-  // Aumentar tamaño de la imagen — mejora visual sin romper estilo
-  const renderImage = (publicId?: string) =>
-    publicId ? (
-      <EspecificacionImagen
-        publicId={publicId}
-        width={260}
-        height={260}
-      />
-    ) : (
-      <span className="text-gray-500 italic">Sin especificación</span>
-    );
 
   return (
     <>
@@ -98,19 +152,21 @@ export default function PlanillaCardRegistro({
 
         <div className="overflow-x-auto w-full">
           <table className="w-full table-auto text-sm border-collapse">
-
-            {/* ENCABEZADO */}
             <thead>
               <tr className="bg-primary-dark text-white">
                 <th className="py-2 px-3 border">Detalle</th>
                 <th className="py-2 px-3 border">Cant. Total</th>
                 <th className="py-2 px-3 border">Cantidad</th>
-                <th className="py-2 px-3 border" colSpan={colSpanTimers}>
+                <th className="py-2 px-3 border" colSpan={timerColSpan}>
                   Temporizadores
                 </th>
               </tr>
+
               <tr className="bg-primary-mid text-white">
-                {headers.map(h => (
+                <th className="py-1 px-3 border"></th>
+                <th className="py-1 px-3 border"></th>
+                <th className="py-1 px-3 border"></th>
+                {headers.map((h) => (
                   <th key={h} className="py-1 px-3 border text-xs">
                     {h}
                   </th>
@@ -119,54 +175,71 @@ export default function PlanillaCardRegistro({
             </thead>
 
             <tbody>
-              {detalles.map(detalle => {
+              {detalles.map((detalle) => {
                 const tareaObj = detalle.detalle_tarea[0];
                 const registros: RegistroResponse[] = tareaObj?.registro ?? [];
-                const acumulado = registros.reduce((s, r) => s + r.cantidad, 0);
-                const puedeAgregar = acumulado < detalle.cantidad_total;
-                const aplica = isTaskApplicable(detalle);
-                const rowSpan = Math.max(registros.length, 1);
 
-                // Genera celdas de temporizador / "No corresponde" / "Agregar operador"
-                const renderTimers = () => {
-                  if (!aplica) {
+                const acumulado = registros.reduce(
+                  (sum, r) => sum + r.cantidad,
+                  0,
+                );
+                const puedeAgregar = acumulado < detalle.cantidad_total;
+
+                const rowSpan = Math.max(registros.length, 1);
+                const aplica = isTaskApplicable(detalle);
+
+                const renderEspecificacion = () =>
+                  detalle.especificacion ? (
+                    <EspecificacionImagen
+                      publicId={detalle.especificacion}
+                      width={260}
+                      height={260}
+                    />
+                  ) : (
+                    <span className="text-gray-500 italic">
+                      Sin especificación
+                    </span>
+                  );
+
+                const renderTimerCells = () => {
+                  if (!aplica)
                     return headers.map((_, i) => (
                       <td
-                        key={`nc-${detalle.id_detalle}-${i}`}
+                        key={`nc-${i}`}
                         rowSpan={rowSpan}
                         className="py-2 px-3 border text-center text-xs text-gray-500"
                       >
                         No corresponde
                       </td>
                     ));
-                  }
 
-                  if (!puedeAgregar) {
+                  if (!puedeAgregar)
                     return headers.map((_, i) => (
                       <td
-                        key={`ok-${detalle.id_detalle}-${i}`}
+                        key={`full-${i}`}
                         rowSpan={rowSpan}
                         className="py-2 px-3 border text-center"
                       >
                         <CheckCircle className="w-6 h-6 text-green-600 mx-auto" />
                       </td>
                     ));
-                  }
 
-                  return headers.map((_, index) => {
-                    const slot = index + 1;
+                  return headers.map((_, idx) => {
+                    const slot = idx + 1;
                     const active = isSlotActive(detalle.id_detalle, slot);
 
                     if (!active) {
                       return (
                         <td
-                          key={`add-${detalle.id_detalle}-${slot}`}
+                          key={`add-${slot}`}
                           rowSpan={rowSpan}
                           className="py-2 px-3 border text-center"
                         >
                           <button
                             type="button"
-                            onClick={() => activateSlot(detalle.id_detalle, slot)}
+                            onClick={() =>
+                              activateSlot(detalle.id_detalle, slot)
+                            }
                             className="px-2 py-1 rounded bg-gray-200 text-xs hover:bg-gray-300"
                           >
                             Agregar operador
@@ -177,34 +250,31 @@ export default function PlanillaCardRegistro({
 
                     return (
                       <td
-                        key={`t-${detalle.id_detalle}-${slot}`}
+                        key={`timer-${slot}`}
                         rowSpan={rowSpan}
                         className="py-2 px-3 border text-center"
                       >
-                        <TimerButton
-                          idDetalle={detalle.id_detalle}
-                          idDetalleTarea={tareaObj.id_detalle_tarea}
-                          idTarea={idTarea}
-                          slot={slot}
-                          onStopped={() =>
-                            setShowModal({
-                              idDetalle: detalle.id_detalle,
-                              idDetalleTarea: tareaObj.id_detalle_tarea,
-                              cantidadTotal: detalle.cantidad_total,
-                              slot,
-                            })
-                          }
-                        />
+                        {tareaObj ? (
+                          <TimerButton
+                            idDetalle={detalle.id_detalle}
+                            idDetalleTarea={tareaObj.id_detalle_tarea}
+                            idTarea={idTarea}
+                            slot={slot}
+                          />
+                        ) : (
+                          <span className="text-xs text-gray-500">—</span>
+                        )}
                       </td>
                     );
                   });
                 };
 
-                // Con registros
                 if (registros.length > 0) {
                   return registros.map((reg, idx) => (
-                    <tr key={`${detalle.id_detalle}-${reg.id_registro}`} className="border-t">
-
+                    <tr
+                      key={`${detalle.id_detalle}-${reg.id_registro}`}
+                      className="border-t"
+                    >
                       {idx === 0 && (
                         <>
                           <td
@@ -214,7 +284,7 @@ export default function PlanillaCardRegistro({
                               detalle.campos_modificados,
                             )}`}
                           >
-                            {renderImage(detalle.especificacion)}
+                            {renderEspecificacion()}
                           </td>
 
                           <td
@@ -231,21 +301,20 @@ export default function PlanillaCardRegistro({
 
                       <td className="py-2 px-3 border">{reg.cantidad}</td>
 
-                      {idx === 0 && renderTimers()}
+                      {idx === 0 && renderTimerCells()}
                     </tr>
                   ));
                 }
 
-                // Sin registros
                 return (
-                  <tr key={`vacio-${detalle.id_detalle}`} className="border-t">
+                  <tr key={`empty-${detalle.id_detalle}`} className="border-t">
                     <td
                       className={`py-2 px-3 border align-top ${highlight(
                         'especificacion',
                         detalle.campos_modificados,
                       )}`}
                     >
-                      {renderImage(detalle.especificacion)}
+                      {renderEspecificacion()}
                     </td>
 
                     <td
@@ -259,7 +328,7 @@ export default function PlanillaCardRegistro({
 
                     <td className="py-2 px-3 border">—</td>
 
-                    {renderTimers()}
+                    {renderTimerCells()}
                   </tr>
                 );
               })}
