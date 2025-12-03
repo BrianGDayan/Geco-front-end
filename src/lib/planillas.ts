@@ -46,6 +46,7 @@ export interface RegistroOperadorResponse {
     id_trabajador: number;
     nombre: string;
   };
+  slot: number;
 }
 
 export interface RegistroResponse {

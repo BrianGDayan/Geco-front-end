@@ -15,26 +15,33 @@ export default function AdminFooter({ planilla }: Props) {
     const mapa = new Map<
       number,
       {
-        corte: number[];
-        doblado: number[];
-        dobladoA1: number[];
-        dobladoA2: number[];
-        empaque: number[];
-        empaqueA1: number[];
+        corte1: number[];
+        corte2: number[];
+        dobl1: number[];
+        dobl2: number[];
+        dobl3: number[];
+        emp1: number[];
+        emp2: number[];
+        noDoblado?: boolean;
+        noEmpaque?: boolean;
       }
     >();
 
     for (const elem of planilla.elemento) {
       for (const det of elem.detalle) {
         const tipo = det.tipo;
+
         if (!mapa.has(tipo)) {
           mapa.set(tipo, {
-            corte: [],
-            doblado: [],
-            dobladoA1: [],
-            dobladoA2: [],
-            empaque: [],
-            empaqueA1: []
+            corte1: [],
+            corte2: [],
+            dobl1: [],
+            dobl2: [],
+            dobl3: [],
+            emp1: [],
+            emp2: [],
+            noDoblado: tipo === 1,
+            noEmpaque: tipo === 4,
           });
         }
 
@@ -44,26 +51,29 @@ export default function AdminFooter({ planilla }: Props) {
           const tarea = dt.tarea.nombre_tarea;
 
           for (const reg of dt.registro) {
-            const ops = reg.operadores || [];
+            const ops = reg.operadores ?? [];
 
-            const op1 = ops[0]?.rendimiento ?? 0;
-            const op2 = ops[1]?.rendimiento ?? 0;
-            const op3 = ops[2]?.rendimiento ?? 0;
+            for (const op of ops) {
+              if (op.rendimiento == null) continue; // ← FIX: no agregamos null
 
-            if (tarea === "Corte") {
-              bloque.corte.push(op1);
-              bloque.corte.push(op2);
-            }
+              // CORTE (slots 1 y 2)
+              if (tarea === 'Corte') {
+                if (op.slot === 1) bloque.corte1.push(op.rendimiento);
+                if (op.slot === 2) bloque.corte2.push(op.rendimiento);
+              }
 
-            if (tarea === "Doblado") {
-              bloque.doblado.push(op1);
-              bloque.dobladoA1.push(op2);
-              bloque.dobladoA2.push(op3);
-            }
+              // DOBLADO (slots 1,2,3)
+              if (tarea === 'Doblado') {
+                if (op.slot === 1) bloque.dobl1.push(op.rendimiento);
+                if (op.slot === 2) bloque.dobl2.push(op.rendimiento);
+                if (op.slot === 3) bloque.dobl3.push(op.rendimiento);
+              }
 
-            if (tarea === "Empaquetado") {
-              bloque.empaque.push(op1);
-              bloque.empaqueA1.push(op2);
+              // EMPAQUE (slots 1 y 2)
+              if (tarea === 'Empaquetado') {
+                if (op.slot === 1) bloque.emp1.push(op.rendimiento);
+                if (op.slot === 2) bloque.emp2.push(op.rendimiento);
+              }
             }
           }
         }
@@ -76,22 +86,21 @@ export default function AdminFooter({ planilla }: Props) {
 
       return {
         tipo,
-        corte1: avg(b.corte.slice(0, b.corte.length / 2)),
-        corte2: avg(b.corte.slice(b.corte.length / 2)),
-        dobl1: avg(b.doblado),
-        dobl2: avg(b.dobladoA1),
-        dobl3: avg(b.dobladoA2),
-        emp1: avg(b.empaque),
-        emp2: avg(b.empaqueA1),
+        corte1: avg(b.corte1),
+        corte2: avg(b.corte2),
+        dobl1: avg(b.dobl1),
+        dobl2: avg(b.dobl2),
+        dobl3: avg(b.dobl3),
+        emp1: avg(b.emp1),
+        emp2: avg(b.emp2),
         noDoblado: tipo === 1,
-        noEmpaque: tipo === 4
+        noEmpaque: tipo === 4,
       };
     });
   }, [planilla]);
 
   return (
     <section className="space-y-8 max-w-7xl mx-auto px-4">
-
       {/* —— PESO —— */}
       <div className="bg-gray-bg rounded-2xl shadow-md p-6">
         <h2 className="text-xl font-bold text-primary-dark mb-4 text-center">Peso Total (Tn)</h2>
@@ -115,7 +124,6 @@ export default function AdminFooter({ planilla }: Props) {
         <h2 className="text-xl font-bold text-primary-dark mb-4 text-center">Medidas de Rendimiento</h2>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-
           {agrupadoPorTipo.map((t) => (
             <div key={t.tipo} className="bg-white rounded-2xl shadow p-5">
               <h3 className="text-lg font-semibold text-secondary-dark mb-3 text-center">

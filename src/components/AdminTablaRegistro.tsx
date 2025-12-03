@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { PlanillaResponse, DetalleResponse, RegistroResponse, UpdateDetalle, updateDetallesBatch, uploadEspecificacion } from '../lib/planillas';
+import { PlanillaResponse, DetalleResponse, RegistroResponse, UpdateDetalle, updateDetallesBatch } from '../lib/planillas';
 import type { UpdateDetalleDto } from '../lib/planillas';
 import EspecificacionImagen from '../components/EspecificacionImagen';
 
@@ -117,14 +117,19 @@ export default function AdminTablaRegistro({ planilla, detalles, idTarea, onSave
         : ['Emp.1', 'Emp.2'];
 
   const rendCols = horasCols;
-  const colsDespuesCantidad = 1 + horasCols.length + rendCols.length; // Fecha + horas + rendimientos
 
+  // ---- FIX DEFINITIVO: ordenar operadores por slot ----
   const getOperadoresOrdenados = (r: RegistroResponse) => {
-    const ops = r.operadores ?? [];
-    return [...ops].sort(
-      (a, b) => a.id_registro_operador - b.id_registro_operador
-    );
-  };
+  const ops = r.operadores ?? [];
+
+  // fallback si falta slot → asignamos según orden original
+  const opsWithSlot = ops.map((op, index) => ({
+    ...op,
+    slot: op.slot ?? index + 1
+  }));
+
+  return opsWithSlot.sort((a, b) => a.slot - b.slot);
+};
 
   return (
     <div className="overflow-x-auto bg-white rounded-lg shadow mb-6">
@@ -151,6 +156,7 @@ export default function AdminTablaRegistro({ planilla, detalles, idTarea, onSave
             ))}
           </tr>
         </thead>
+
         <tbody>
           {detalles.map(d => {
             const tipoNum = Number(d.tipo);
@@ -167,163 +173,113 @@ export default function AdminTablaRegistro({ planilla, detalles, idTarea, onSave
             const registros: RegistroResponse[] = tareaObj?.registro ?? [];
             const rowSpan = registros.length || 1;
 
-            // reglas de NO CORRESPONDE
             const noDoblado = idTarea === 2 && tipoNum === 1;
             const noEmpaquetado = idTarea === 3 && tipoNum === 4;
             const mostrarNoCorresponde = noDoblado || noEmpaquetado;
 
             if (registros.length > 0) {
-              return registros.map((r, idx) => (
-                <tr key={r.id_registro} className="border-t">
+              return registros.map((r, idx) => {
+                const ops = getOperadoresOrdenados(r);
 
-                  {idx === 0 && (
-                    <>
-                      <td rowSpan={rowSpan} className="py-2 px-3 border text-center">
-                        {d.nombre_elemento}
-                      </td>
+                // ---- FIX: elegir operador según slot ----
+                const op1 = ops.find(o => o.slot === 1)?.tiempo_horas ?? '-';
+                const op2 = ops.find(o => o.slot === 2)?.tiempo_horas ?? '-';
+                const op3 = ops.find(o => o.slot === 3)?.tiempo_horas ?? '-';
 
-                      <td rowSpan={rowSpan} className={`py-2 px-3 border relative ${highlight("especificacion", d.campos_modificados)}`}>
-                        <EspecificacionImagen
-                          publicId={d.especificacion}
-                          width={200}
-                          height={200}
-                          alt={`Detalle ${d.id_detalle}`}
-                        />
-                      </td>
+                const r1 = ops.find(o => o.slot === 1)?.rendimiento?.toFixed(3) ?? '-';
+                const r2 = ops.find(o => o.slot === 2)?.rendimiento?.toFixed(3) ?? '-';
+                const r3 = ops.find(o => o.slot === 3)?.rendimiento?.toFixed(3) ?? '-';
 
-                      <td rowSpan={rowSpan} className={`py-2 px-3 border ${highlight("posicion", d.campos_modificados)}`}>
-                        {d.posicion}
-                      </td>
+                return (
+                  <tr key={r.id_registro} className="border-t">
 
-                      <td rowSpan={rowSpan} className={`py-2 px-3 border ${highlight("tipo", d.campos_modificados)}`}>
-                        {d.tipo}
-                      </td>
+                    {idx === 0 && (
+                      <>
+                        <td rowSpan={rowSpan} className="py-2 px-3 border text-center">
+                          {d.nombre_elemento}
+                        </td>
 
-                      <td rowSpan={rowSpan} className={`py-2 px-3 border ${highlight("medida_diametro", d.campos_modificados)}`}>
-                        {d.medida_diametro}
-                      </td>
+                        <td rowSpan={rowSpan} className={`py-2 px-3 border relative ${highlight("especificacion", d.campos_modificados)}`}>
+                          <EspecificacionImagen
+                            publicId={d.especificacion}
+                            width={200}
+                            height={200}
+                            alt={`Detalle ${d.id_detalle}`}
+                          />
+                        </td>
 
-                      <td rowSpan={rowSpan} className={`py-2 px-3 border ${highlight("longitud_corte", d.campos_modificados)}`}>
-                        {d.longitud_corte}
-                      </td>
+                        <td rowSpan={rowSpan} className={`py-2 px-3 border ${highlight("posicion", d.campos_modificados)}`}>{d.posicion}</td>
+                        <td rowSpan={rowSpan} className={`py-2 px-3 border ${highlight("tipo", d.campos_modificados)}`}>{d.tipo}</td>
+                        <td rowSpan={rowSpan} className={`py-2 px-3 border ${highlight("medida_diametro", d.campos_modificados)}`}>{d.medida_diametro}</td>
+                        <td rowSpan={rowSpan} className={`py-2 px-3 border ${highlight("longitud_corte", d.campos_modificados)}`}>{d.longitud_corte}</td>
+                        <td rowSpan={rowSpan} className={`py-2 px-3 border bg-primary-light text-white font-semibold ${highlight("cantidad_total", d.campos_modificados)}`}>
+                          {d.cantidad_total}
+                        </td>
+                      </>
+                    )}
 
+                    <td className="py-2 px-3 border">
+                      {new Date(r.fecha).toLocaleDateString("es-ES")}
+                    </td>
+
+                    {mostrarNoCorresponde ? (
                       <td
-                        rowSpan={rowSpan}
-                        className={`py-2 px-3 border border-r-2 bg-primary-light text-white font-semibold ${highlight("cantidad_total", d.campos_modificados)}`}
+                        className="py-2 px-3 border text-center italic text-gray-500"
+                        colSpan={horasCols.length}
                       >
-                        {d.cantidad_total}
+                        NO CORRESPONDE
                       </td>
-                    </>
-                  )}
+                    ) : (
+                      <>
+                        <td className="py-2 px-3 border">{op1}</td>
+                        <td className="py-2 px-3 border">{op2}</td>
+                        {idTarea === 2 && (
+                          <td className="py-2 px-3 border">{op3}</td>
+                        )}
+                      </>
+                    )}
 
-                  {/* FECHA */}
-                  <td className="py-2 px-3 border">
-                    {new Date(r.fecha).toLocaleDateString("es-ES")}
-                  </td>
-
-           {/* HORAS / NO CORRESPONDE */}
-            {mostrarNoCorresponde ? (
-              <td
-                className="py-2 px-3 border text-center italic text-gray-500"
-                colSpan={horasCols.length}
-              >
-                NO CORRESPONDE
-              </td>
-            ) : (
-              <>
-                {(() => {
-                  const ops = r.operadores ?? [];
-                  const op1 = ops[0]?.tiempo_horas ?? '-';
-                  const op2 = ops[1]?.tiempo_horas ?? '-';
-                  const op3 = ops[2]?.tiempo_horas ?? '-';
-
-                  return (
-                    <>
-                      {/* Operador 1 */}
-                      <td className="py-2 px-3 border">{op1}</td>
-
-                      {/* Operador 2 */}
-                      <td className="py-2 px-3 border">{op2}</td>
-
-                      {/* Operador 3 solo si doblado */}
-                      {idTarea === 2 && (
-                        <td className="py-2 px-3 border">{op3}</td>
-                      )}
-                    </>
-                  );
-                })()}
-              </>
-            )}
-
-            {/* RENDIMIENTOS / NO CORRESPONDE */}
-            {mostrarNoCorresponde ? (
-              <td
-                className="py-2 px-3 border text-center italic text-gray-500"
-                colSpan={rendCols.length}
-              >
-                NO CORRESPONDE
-              </td>
-            ) : (
-              <>
-                {(() => {
-                  const ops = r.operadores ?? [];
-                  const r1 = ops[0]?.rendimiento?.toFixed(3) ?? '-';
-                  const r2 = ops[1]?.rendimiento?.toFixed(3) ?? '-';
-                  const r3 = ops[2]?.rendimiento?.toFixed(3) ?? '-';
-
-                  return (
-                    <>
-                      {/* Rendimiento operador 1 */}
-                      <td className="py-2 px-3 border">{r1}</td>
-
-                      {/* Rendimiento operador 2 */}
-                      <td className="py-2 px-3 border">{r2}</td>
-
-                      {/* Rendimiento operador 3 solo en doblado */}
-                      {idTarea === 2 && (
-                        <td className="py-2 px-3 border">{r3}</td>
-                      )}
-                    </>
-                  );
-                })()}
-              </>
-            )}
-                </tr>
-              ));
+                    {mostrarNoCorresponde ? (
+                      <td
+                        className="py-2 px-3 border text-center italic text-gray-500"
+                        colSpan={rendCols.length}
+                      >
+                        NO CORRESPONDE
+                      </td>
+                    ) : (
+                      <>
+                        <td className="py-2 px-3 border">{r1}</td>
+                        <td className="py-2 px-3 border">{r2}</td>
+                        {idTarea === 2 && (
+                          <td className="py-2 px-3 border">{r3}</td>
+                        )}
+                      </>
+                    )}
+                  </tr>
+                );
+              });
             }
 
-            // FILA SIN REGISTROS
+            // FILA VACÍA
             return (
               <tr key={`empty-${d.id_detalle}`} className="border-t">
-
                 <td className="py-2 px-3 border text-center">{d.nombre_elemento}</td>
-
                 <td className="py-2 px-3 border relative">
                   <EspecificacionImagen publicId={d.especificacion} width={200} height={200} alt="" />
                 </td>
-
                 <td className="py-2 px-3 border">{d.posicion}</td>
                 <td className="py-2 px-3 border">{d.tipo}</td>
                 <td className="py-2 px-3 border">{d.medida_diametro}</td>
                 <td className="py-2 px-3 border">{d.longitud_corte}</td>
-                <td className="py-2 px-3 border border-r-2 bg-primary-light text-white font-semibold">{d.cantidad_total}</td>
-                <td className="py-2 px-3 border text-center italic text-gray-500">
-                  —
-                </td>
+                <td className="py-2 px-3 border bg-primary-light text-white font-semibold">{d.cantidad_total}</td>
+                <td className="py-2 px-3 border text-center italic text-gray-500">—</td>
 
-                {/* NO REGISTROS — aplicar NO CORRESPONDE si corresponde */}
                 {noDoblado || noEmpaquetado ? (
                   <>
-                    <td
-                      className="py-2 px-3 border text-center italic text-gray-500"
-                      colSpan={idTarea === 2 ? 3 : 2}
-                    >
+                    <td className="py-2 px-3 border text-center italic text-gray-500" colSpan={idTarea === 2 ? 3 : 2}>
                       NO CORRESPONDE
                     </td>
-                    <td
-                      className="py-2 px-3 border text-center italic text-gray-500"
-                      colSpan={idTarea === 2 ? 3 : 2}
-                    >
+                    <td className="py-2 px-3 border text-center italic text-gray-500" colSpan={idTarea === 2 ? 3 : 2}>
                       NO CORRESPONDE
                     </td>
                   </>
@@ -331,14 +287,11 @@ export default function AdminTablaRegistro({ planilla, detalles, idTarea, onSave
                   <>
                     <td className="py-2 px-3 border text-center italic text-gray-500">-</td>
                     <td className="py-2 px-3 border text-center italic text-gray-500">-</td>
-
                     {idTarea === 2 && (
                       <td className="py-2 px-3 border text-center italic text-gray-500">-</td>
                     )}
-
                     <td className="py-2 px-3 border text-center italic text-gray-500">-</td>
                     <td className="py-2 px-3 border text-center italic text-gray-500">-</td>
-
                     {idTarea === 2 && (
                       <td className="py-2 px-3 border text-center italic text-gray-500">-</td>
                     )}
