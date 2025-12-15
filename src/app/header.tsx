@@ -11,7 +11,7 @@ export default function Header() {
                     height={52}
                     className="w-auto h-auto"
                 />
-                <h1 className="text-lg sm:text-3xl font-bold mx-auto text-center" >Sistema de control de gestión</h1>
+                <h1 className="text-lg sm:text-3xl font-bold mx-auto text-center" >Sistema de control de rendimientos</h1>
             </div>
         </header>
     );
