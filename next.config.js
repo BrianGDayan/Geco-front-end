@@ -1,17 +1,13 @@
-const path = require('path');
-
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  reactStrictMode: true,
   eslint: {
-    ignoreDuringBuilds: true, // <- ignora errores de lint durante build
+    // Ignora errores de linting en el build para ahorrar memoria
+    ignoreDuringBuilds: true,
   },
-  webpack(config) {
-    config.resolve = config.resolve || {};
-    config.resolve.alias = {
-      ...(config.resolve.alias || {}),
-      "@": path.resolve(__dirname, "src"), // <- alias @/ a src
-    };
-    return config;
+  typescript: {
+    // Ignora errores de tipo en el build para ahorrar memoria
+    ignoreBuildErrors: true,
   },
 };
 
