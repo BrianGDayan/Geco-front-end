@@ -1,6 +1,6 @@
 import { TimersProvider } from "../hooks/useTimers";
 import "./globals.css";
-import Header from "./Header";
+import Header from "./Header_temp";
 import { Inter } from "next/font/google";
 
 const inter = Inter({
