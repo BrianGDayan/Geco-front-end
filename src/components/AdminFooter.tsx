@@ -9,7 +9,9 @@ interface Props {
 
 export default function AdminFooter({ planilla }: Props) {
   const total = planilla.peso_total.toFixed(3);
-  const lista = Array.isArray(planilla.pesos_diametro) ? planilla.pesos_diametro : [];
+  const lista = Array.isArray(planilla.pesos_diametro)
+    ? planilla.pesos_diametro
+    : [];
 
   const agrupadoPorTipo = useMemo(() => {
     const mapa = new Map<
@@ -54,22 +56,19 @@ export default function AdminFooter({ planilla }: Props) {
             const ops = reg.operadores ?? [];
 
             for (const op of ops) {
-              if (op.rendimiento == null) continue; // ← FIX: no agregamos null
+              if (op.rendimiento == null) continue;
 
-              // CORTE (slots 1 y 2)
               if (tarea === 'Corte') {
                 if (op.slot === 1) bloque.corte1.push(op.rendimiento);
                 if (op.slot === 2) bloque.corte2.push(op.rendimiento);
               }
 
-              // DOBLADO (slots 1,2,3)
               if (tarea === 'Doblado') {
                 if (op.slot === 1) bloque.dobl1.push(op.rendimiento);
                 if (op.slot === 2) bloque.dobl2.push(op.rendimiento);
                 if (op.slot === 3) bloque.dobl3.push(op.rendimiento);
               }
 
-              // EMPAQUE (slots 1 y 2)
               if (tarea === 'Empaquetado') {
                 if (op.slot === 1) bloque.emp1.push(op.rendimiento);
                 if (op.slot === 2) bloque.emp2.push(op.rendimiento);
@@ -99,20 +98,37 @@ export default function AdminFooter({ planilla }: Props) {
     });
   }, [planilla]);
 
+  // 🔹 LÓGICA PARA SUMA DE RENDIMIENTOS DOBLADO (LO ÚNICO NUEVO)
+  const doblador = planilla.rendimiento_global_doblado_trabajador;
+  const sumaAyudantes =
+    planilla.rendimiento_global_doblado_ayudante +
+    planilla.rendimiento_global_doblado_ayudante2;
+
   return (
     <section className="space-y-8 max-w-7xl mx-auto px-4">
       {/* —— PESO —— */}
       <div className="bg-gray-bg rounded-2xl shadow-md p-6">
-        <h2 className="text-xl font-bold text-primary-dark mb-4 text-center">Peso Total (Tn)</h2>
+        <h2 className="text-xl font-bold text-primary-dark mb-4 text-center">
+          Peso Total (Tn)
+        </h2>
 
         <div className="flex flex-col items-center mb-6">
-          <span className="text-4xl font-extrabold text-primary-mid mb-4">{total}</span>
+          <span className="text-4xl font-extrabold text-primary-mid mb-4">
+            {total}
+          </span>
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 w-full">
             {lista.map(({ diametro, peso }, i) => (
-              <div key={i} className="bg-white rounded-lg p-3 flex flex-col items-center">
-                <span className="text-sm font-medium text-gray-text mb-1">Ø {diametro}</span>
-                <span className="text-lg font-semibold text-gray-text">{peso.toFixed(3)}</span>
+              <div
+                key={i}
+                className="bg-white rounded-lg p-3 flex flex-col items-center"
+              >
+                <span className="text-sm font-medium text-gray-text mb-1">
+                  Ø {diametro}
+                </span>
+                <span className="text-lg font-semibold text-gray-text">
+                  {peso.toFixed(3)}
+                </span>
               </div>
             ))}
           </div>
@@ -121,7 +137,9 @@ export default function AdminFooter({ planilla }: Props) {
 
       {/* —— RENDIMIENTOS POR TIPO —— */}
       <div>
-        <h2 className="text-xl font-bold text-primary-dark mb-4 text-center">Medidas de Rendimiento</h2>
+        <h2 className="text-xl font-bold text-primary-dark mb-4 text-center">
+          Medidas de Rendimiento
+        </h2>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {agrupadoPorTipo.map((t) => (
@@ -131,8 +149,6 @@ export default function AdminFooter({ planilla }: Props) {
               </h3>
 
               <ul className="space-y-2 text-gray-text">
-
-                {/* Corte */}
                 <li className="flex justify-between">
                   <span>Corte:</span>
                   <span>
@@ -140,19 +156,18 @@ export default function AdminFooter({ planilla }: Props) {
                   </span>
                 </li>
 
-                {/* Doblado */}
                 <li className="flex justify-between">
                   <span>Doblado:</span>
                   {t.noDoblado ? (
                     <span>No corresponde</span>
                   ) : (
                     <span>
-                      {t.dobl1.toFixed(3)} / {t.dobl2.toFixed(3)} / {t.dobl3.toFixed(3)}
+                      {t.dobl1.toFixed(3)} / {t.dobl2.toFixed(3)} /{' '}
+                      {t.dobl3.toFixed(3)}
                     </span>
                   )}
                 </li>
 
-                {/* Empaque */}
                 <li className="flex justify-between">
                   <span>Empaquetado:</span>
                   {t.noEmpaque ? (
@@ -194,10 +209,39 @@ export default function AdminFooter({ planilla }: Props) {
           </div>
 
           <div>
-            <h3 className="text-sm font-medium text-gray-text mb-1">Empaquetado</h3>
+            <h3 className="text-sm font-medium text-gray-text mb-1">
+              Empaquetado
+            </h3>
             <p className="text-xl font-bold text-gray-text">
               {planilla.rendimiento_global_empaquetado_trabajador.toFixed(3)} /
               {planilla.rendimiento_global_empaquetado_ayudante.toFixed(3)}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* —— SUMA DE RENDIMIENTOS DOBLADO —— */}
+      <div className="bg-white rounded-2xl shadow-md p-6">
+        <h3 className="text-base font-bold text-primary-dark text-center uppercase tracking-wide">
+          Suma de Rendimientos
+        </h3>
+
+        <div className="mt-4 flex flex-col sm:flex-row justify-center items-center gap-5">
+          <div className="flex flex-col items-center px-3">
+            <h3 className="text-sm font-medium text-gray-text mb-1">
+              Doblador
+            </h3>
+            <p className="text-2xl font-extrabold text-primary-dark">
+              {doblador.toFixed(3)}
+            </p>
+          </div>
+
+          <div className="flex flex-col items-center px-3">
+            <h3 className="text-sm font-medium text-gray-text mb-1">
+              Ayudantes
+            </h3>
+            <p className="text-2xl font-extrabold text-primary-dark">
+              {sumaAyudantes.toFixed(3)}
             </p>
           </div>
         </div>
